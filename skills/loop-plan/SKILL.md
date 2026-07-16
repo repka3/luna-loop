@@ -41,7 +41,10 @@ Anything a lone task will need must live here or in the task itself.
 
 `rg` / `ls` every path, symbol, and precondition the plan names, against the
 actual repo. A plan that assumes a file no task creates fails at dispatch one;
-the scan costs a minute and catches it now.
+the scan costs a minute and catches it now. Also `rg` every surface the plan
+*changes* for consumers and pinning tests the file list missed — the whitelist
+must include the files that will break, not only the files that will change,
+or the executor meets them mid-task and stops.
 
 ## Hard rules
 

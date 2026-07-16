@@ -59,7 +59,7 @@ writes your codex configuration**; your codex model and pricing tier stay your
 own base-config choices.
 
 - The installer makes **no network calls and runs no codex commands** — it
-  checks that `codex` resolves on your PATH (game over if not) and copies five
+  checks that `codex` resolves on your PATH (game over if not) and copies six
   folders, plugin-style. That's the whole job.
 - Installed skills are plain directories that owe nothing to this repo — you
   can delete the clone afterwards and everything keeps working; you only need
@@ -67,7 +67,7 @@ own base-config choices.
 - Exit codes: `0` success · `1` conflict, nothing installed ·
   `2` codex missing or copy failure · `64` bad arg
 
-## The five skills
+## The six skills
 
 - **loop-interview** — pre-spec interview: one decision per message, options
   verified before they're offered; exits to a spec or a loose note.
@@ -78,6 +78,9 @@ own base-config choices.
 - **loop-review** — the independent gate: blind codex dispatch, fold/cut/escalate
   triage, committed review ledger, diff-only rounds. Invoked explicitly — it
   costs real dispatches.
+- **loop-execute** — run a gated plan task-by-task: one task in flight, the
+  driver verifies diff and tests itself, commits green before the next; a STOP
+  amends the plan. Fires only on the user's explicit go-word.
 - **codex** — dispatch mechanics: sandbox table, three call shapes, effort
   economics, never resume. Invoked explicitly or by the other skills.
 

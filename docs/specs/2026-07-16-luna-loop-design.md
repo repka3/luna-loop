@@ -8,6 +8,7 @@ that keeps that loop identical across every machine that runs it.
 
 **Status:** Draft, reworked after review round 1. Ledger:
 `docs/specs/2026-07-16-luna-loop-design.review.md`.
+Amended 2026-07-16 (owner-approved): `loop-execute` added — see Decisions.
 
 ---
 
@@ -138,6 +139,7 @@ luna-loop/
 │   ├── loop-spec/SKILL.md
 │   ├── loop-plan/SKILL.md
 │   ├── loop-review/SKILL.md
+│   ├── loop-execute/SKILL.md
 │   └── codex/SKILL.md
 └── docs/
     ├── specs/               the pack's own specs (this file) + review ledgers
@@ -163,7 +165,7 @@ repository; in a non-git directory the driver verifies manually and says so.
 
 ---
 
-## The Five Skills
+## The Six Skills
 
 Frontmatter and invocation policy (Claude Code selects skills by `description`, so
 the description *is* the trigger contract):
@@ -174,9 +176,10 @@ the description *is* the trigger contract):
 | `loop-spec` | may auto-match | write a spec from settled decisions |
 | `loop-plan` | may auto-match | turn an approved spec into a dispatchable plan |
 | `loop-review` | **explicit user request only** (dispatches cost real money) | run the independent review gate on a spec or plan |
+| `loop-execute` | **explicit user go-word only** (spends money, writes files) | execute a gated plan task-by-task |
 | `codex` | **explicit user request only** (side-effecting dispatch) | invoke Codex CLI: call shapes, sandbox, effort |
 
-The two dispatch skills state their explicit-invocation policy inside their own
+The three dispatch skills state their explicit-invocation policy inside their own
 `description` so the driver model does not fire them speculatively.
 
 ### 1. `loop-interview` — pre-spec interview
@@ -317,7 +320,35 @@ Rounds:
 - **Convergence is a decision, not a discovery.** The reviewer never says "done";
   the human calls it, and triage lines make that call easy.
 
-### 5. `codex` — reviewer/executor mechanics (pure)
+### 5. `loop-execute` — execute the gated plan (after the plan gate)
+
+The driver's loop over a gated plan: **dispatch → verify → commit → next.**
+Fires only on the user's explicit go-word ("go", "build task 1") — execution
+spends money and writes files, so a gated plan's existence is never the
+trigger. A standing "keep going" authorizes the run; interrupts are reserved
+for decisions that change the spec's meaning or a user-visible trade-off.
+
+- **One task in flight, ever:** task N verified and committed green before
+  task N+1 dispatches — every dispatch lands on a verified tree, and a bug
+  found in verification has one task's diff as suspect, not an entangled pair.
+- **Extraction:** promptfile = Global Constraints verbatim + the one task
+  (consuming `loop-plan`'s contract), plus one standing instruction: run the
+  task's Verify commands if the sandbox allows and report exactly what could
+  not be run. Dispatch per the `codex` skill's implementation shape.
+- **Driver verification is the point, not a ceremony:** read the diff hunk by
+  hunk against the task's contracts, run the Verify commands and the standard
+  suite yourself, verify hardest what the executor could not run. Suspected
+  flakes rerun to 3 consecutive greens AND get a cause. The executor's summary
+  is a claim, not evidence.
+- **Commit per verified task**, message carrying the why. Non-git projects:
+  no commit boundary — verify manually and say so (same stance as
+  `loop-review`).
+- **A STOP is a plan bug found cheaply:** diagnose against reality, amend the
+  plan (it stays the executor's single source), commit the amendment,
+  re-dispatch fresh. A disagreement reaching the spec's meaning goes to the
+  human with both sides' evidence.
+
+### 6. `codex` — reviewer/executor mechanics (pure)
 
 Only what is load-bearing for *calling* codex:
 
@@ -380,10 +411,10 @@ Only what is load-bearing for *calling* codex:
 Windows: Git Bash, a declared prerequisite). Honors `CLAUDE_CONFIG_DIR` (default
 `~/.claude`). It makes **no network calls and runs no codex commands**: it checks
 that `codex` resolves on PATH (missing → clear message, exit 2, game over), then
-links five folders.
+copies six folders.
 
-**Ownership and conflicts.** The installer manages **five targets** under one
-rule: the five skill directories are **copied, plugin-style**, into
+**Ownership and conflicts.** The installer manages **six targets** under one
+rule: the six skill directories are **copied, plugin-style**, into
 `$CLAUDE_CONFIG_DIR/skills/<name>`. It never reads or writes `$CODEX_HOME` —
 codex configuration is entirely the machine owner's. Ownership travels with the
 artifact: a successful install drops a `.luna-loop` marker file inside the
@@ -406,7 +437,7 @@ Steps:
    Code creates it — its absence means this machine isn't ready or the path is
    wrong) and must be absolute. Any gate failure → one clear message, exit 2.
    No other codex interaction of any kind.
-2. **Pre-flight.** Check all five targets; on any conflict, report and exit 1
+2. **Pre-flight.** Check all six targets; on any conflict, report and exit 1
    before touching anything.
 3. **Install.** Per target: remove the owned copy — **never recursively**:
    delete exactly the two files the pack writes (`SKILL.md`, the marker), then
@@ -419,7 +450,7 @@ Steps:
    *"Of course, codex dispatches follow your machine's own AGENTS.md and codex
    config — your rules, not this pack's."*
 
-No uninstall script: delete the five folders, done. No state files: the repo
+No uninstall script: delete the six folders, done. No state files: the repo
 generates nothing, tracks nothing, and can itself be deleted after installing —
 it is only needed again to update.
 
@@ -429,7 +460,7 @@ it is only needed again to update.
 
 | # | Requirement | Acceptance check |
 |---|---|---|
-| R1 | Fresh Linux install: five skills resolve | run `install.sh` on a clean `$CLAUDE_CONFIG_DIR`; new Claude session lists all five skills |
+| R1 | Fresh Linux install: six skills resolve | run `install.sh` on a clean `$CLAUDE_CONFIG_DIR`; new Claude session lists all six skills |
 | R2 | Idempotent rerun: converges to repo state, prompts nothing | run twice; second run re-copies, prints one line per target, exits 0 |
 | R3 | Conflicts fail clean: foreign target → nothing installed, conflict named, exit non-zero | seed a fake `$CLAUDE_CONFIG_DIR/skills/codex`; install touches nothing, names the path, exits 1; remove it → rerun installs |
 | R4 | Installed skills are self-contained plain directories | delete the clone; installed skills keep working; re-clone restores the update channel |
@@ -512,6 +543,20 @@ it is only needed again to update.
   invented review context) is closed structurally instead of by measurement:
   `loop-review` always stages external dependencies. Ruled by the owner.
 - **MIT license** — public utility pack, no reason for anything heavier.
+- **`loop-execute` added — the execution phase gets an owner (2026-07-16,
+  owner-approved after the pack's first field week).** The pack described how
+  to write specs and plans, gate them, and make one codex call — but not the
+  driver's loop that runs a gated plan, which is where the origin project's
+  field week put every real executor bug. The content is small and partly
+  restates neighbors (extraction from `loop-plan`, diff-reading from `codex`);
+  the skill exists for its **trigger**: the user's go-word ("go", "build it")
+  matches no other skill's description, and a driver with no matching skill
+  improvises exactly this phase. Fires only on that go-word — execution spends
+  money and writes files, so a gated plan's existence is never sufficient.
+  New rules it owns: one task in flight (commit green before the next
+  dispatch), the STOP procedure (diagnose → amend plan → commit → re-dispatch
+  fresh), flake discipline (3 consecutive greens AND a cause), and
+  verify-hardest-what-the-executor-could-not-run.
 
 ## Open Questions
 

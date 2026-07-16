@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# luna-loop installer — copies five skills into $CLAUDE_CONFIG_DIR/skills,
+# luna-loop installer — copies six skills into $CLAUDE_CONFIG_DIR/skills,
 # plugin-style. No links, no state files, no network, no codex commands, and
 # no recursive deletion: removal is "the two files we wrote, then rmdir",
 # which refuses to touch anything we didn't put there.
@@ -8,7 +8,7 @@
 set -u
 
 REPO="$(cd "$(dirname "$0")" && pwd -P)"
-TARGETS="loop-interview loop-spec loop-plan loop-review codex"
+TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
 MARKER=".luna-loop"
 
 [ "$#" -gt 0 ] && { echo "usage: ./install.sh"; exit 64; }
