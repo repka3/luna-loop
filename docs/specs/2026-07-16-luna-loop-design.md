@@ -19,7 +19,7 @@ outside this boundary get cut, not folded.*
 **Boundary:**
 - The repo is **public on GitHub**. Nothing personal, machine-identifying, or secret
   is ever committed: no private CLAUDE.md, no API keys, no per-machine facts.
-  `.gitignore` enforces the known offender (`MACHINE.md`);
+  Nothing is generated into the repo, so there is nothing to gitignore;
   promptfiles and raw reviewer output live in the driver's scratchpad, outside the
   repo, always. Review ledgers are committed by design; they carry review-process data —
   findings, dispositions, round baselines, reversal counts — and never personal or
@@ -34,10 +34,10 @@ outside this boundary get cut, not folded.*
 - **Codex-side ambient context is the machine owner's domain.** Codex always loads
   its global `$CODEX_HOME/AGENTS.md` and its own skills; codex-cli 0.144 has no
   per-invocation switch to suppress the global file (measured, and confirmed against
-  its docs). The pack never manages, replaces, or works around the user's codex
-  environment. Its duty is **detect and disclose**: the installer records ambient
-  context in `MACHINE.md` and prints a post-install reminder that the machine's
-  AGENTS.md still applies to loop dispatches. "Blind" in this document means *our
+  its docs). The pack never manages, reads, replaces, or works around the user's codex
+  environment. Its duty is one line of speech: the installer prints a reminder
+  that the machine's AGENTS.md still applies to loop dispatches. It detects
+  nothing and reads nothing in `$CODEX_HOME`. "Blind" in this document means *our
   side sends no priming* — it is a claim about the prompt, not about codex's config.
 - Supported platforms: Linux (measured), macOS (expected, unverified), Windows
   **provisional** until its pending measurements land. **Git Bash is a hard
@@ -102,17 +102,16 @@ nobody can say why.
   machine beats the pack, the delta becomes a skill edit, committed, pulled
   everywhere. Skills are the shared memory; local memory is the lab bench.
 - **The update path is always `git pull && ./install.sh`.** The installer is
-  idempotent, non-interactive, and quiet — one status line per target. Link-installed
-  targets update through the pull alone; copy-fallback
-  targets are refreshed by the rerun. Installed copies are **never hand-edited** —
-  the repo is the single source of truth; edit the repo and reinstall.
-- **`MACHINE.md` (gitignored) holds what must not sync:** OS, binary paths and
-  versions, login state, install mode used per target, which targets are
-  pack-owned, sandbox read-scope probe result, and ambient codex context
-  (global AGENTS.md present? codex skills present?).
-- **Ambient context is the first drift suspect.** When two machines' review verdicts
-  on the same document diverge for no visible reason, compare their `MACHINE.md`
-  ambient sections before blaming the model.
+  idempotent, non-interactive, and quiet — one status line per target; the rerun
+  re-copies every skill from the clone, plugin-style. Installed skills are plain
+  directories that owe nothing to the clone: delete it and they keep working —
+  you only lose the update channel. Installed copies are **never hand-edited** —
+  the repo is the single source of truth; edit the repo and reinstall (a stray
+  hand-edit is simply overwritten by the next update, converging back to repo
+  truth).
+- **When two machines' verdicts diverge** for no visible reason, remember that
+  each machine's own AGENTS.md and codex config color its reviews — compare those
+  with their owners before blaming the model.
 - **Peer review (warm), distinct from the codex gate (cold):** an agent instance on
   another machine, with different lived experience, reviews the spec and skills
   against its own memory — "what did your long autonomous sessions teach you that
@@ -132,7 +131,6 @@ luna-loop/
 │                           per-skill index, the AGENTS.md disclosure note
 ├── LICENSE                 MIT
 ├── install.sh              see Install section
-├── .gitignore              MACHINE.md
 ├── skills/
 │   ├── loop-interview/SKILL.md
 │   ├── loop-spec/SKILL.md
@@ -277,12 +275,13 @@ Composing the dispatch — **blind means no out-of-band advocacy, not no context
   invention* — confidently, at max effort, formatted like a real finding. (Measured:
   a max review missing one sibling repo returned its only blocker at the wrong
   severity and a security finding the withheld context ruled out.)
-- **Check `MACHINE.md` read-scope first.** The provide-by-path mechanism assumes the
-  read-only sandbox can read outside the worktree — measured true on the origin
-  machine, probed per machine at install. Where the probe says reads are confined,
-  copy the dependencies into a temporary `.luna-loop-staging/` directory inside the
-  worktree, point the reading order there, and delete it when the round completes —
-  then check `git status` so nothing staged can ever be committed into the project.
+- **External dependencies are always staged.** Never assume the read-only sandbox
+  can read outside the worktree — where it cannot, a review does not fail, it
+  silently invents the missing context. Copy external dependencies into a
+  temporary `.luna-loop-staging/` directory inside the worktree, point the
+  reading order there, and delete it when the round completes — then check
+  `git status` so nothing staged can ever be committed. In-worktree dependencies
+  are cited by path; no staging needed.
 - Effort **max**. Ask for numbered findings with references and severities.
 
 **The ledger** — every gated document gets `<doc-basename>.review.md` beside it,
@@ -367,10 +366,9 @@ Only what is load-bearing for *calling* codex:
   itself** before reporting done — the executor's summary is a claim, not evidence.
 - **Ambient context disclosure:** codex loads the machine's global AGENTS.md and its
   own skills on every call; there is no per-invocation off switch (measured on
-  0.144). The skill states this plainly and points at `MACHINE.md`'s ambient
-  section.
-- **No hardcoded machine facts.** Origin-machine measurements are labeled as such;
-  per-machine facts live in `MACHINE.md`, written by `install.sh`.
+  0.144). The skill states this plainly: the owner's config, the owner's rules.
+- **No hardcoded machine facts.** Origin-machine measurements are labeled as
+  such; when reality disagrees with one, re-measure it.
 
 ---
 
@@ -378,51 +376,44 @@ Only what is load-bearing for *calling* codex:
 
 `install.sh` — bash, idempotent, no root/admin, one script for all platforms (on
 Windows: Git Bash, a declared prerequisite). Honors `CLAUDE_CONFIG_DIR` (default
-`~/.claude`) and `CODEX_HOME` (default `~/.codex`).
+`~/.claude`). It makes **no network calls and runs no codex commands**: it checks
+that `codex` resolves on PATH (missing → clear message, exit 2, game over), then
+links five folders.
 
 **Ownership and conflicts.** The installer manages **five targets** under one
-rule: the five skill directories → `$CLAUDE_CONFIG_DIR/skills/<name>`. It never
-writes into `$CODEX_HOME` — codex configuration is entirely the machine owner's.
-A target is pack-owned iff it is a symlink/junction resolving into this clone, or
-recorded as a pack-installed copy in `MACHINE.md`. Pack-owned targets refresh
-silently on every rerun. Anything else at a target path is a **conflict, and
-conflicts fail clean**: the installer pre-flights every target before touching
-anything; on any conflict it installs **nothing**, prints exactly which paths
-conflict and what they are, and exits non-zero. The user resolves it manually
-(their files, their call) and reruns. The installer never moves, renames, backs up,
-or deletes files it does not own, and it **never prompts — there is no interactive
-path**. Installed copies are never hand-edited; the repo is the source of truth.
+rule: the five skill directories are **copied, plugin-style**, into
+`$CLAUDE_CONFIG_DIR/skills/<name>`. It never reads or writes `$CODEX_HOME` —
+codex configuration is entirely the machine owner's. Ownership travels with the
+artifact: a successful install drops a `.luna-loop` marker file inside the
+copied directory, **last, as a receipt** — so a half-finished copy from a failed
+run reads as foreign and conflicts loudly instead of being silently trusted.
+A target is pack-owned iff it is a plain directory carrying the marker; owned
+targets are deleted and re-copied on every rerun (idempotent by outcome).
+Anything else at a target path — foreign dir, file, any symlink — is a
+**conflict, and conflicts fail clean**: the installer pre-flights every target
+before touching anything; on any conflict it installs **nothing**, prints
+exactly which paths conflict and what they are, and exits non-zero. The user
+resolves it manually (their files, their call) and reruns. The installer never
+moves, renames, backs up, or deletes files it does not own, and it **never
+prompts — there is no interactive path**. Installed copies are never
+hand-edited; the repo is the source of truth.
 
 Steps:
-1. **Pre-flight.** Check all five targets; on any conflict, report and exit 1
+1. **Game-over check.** `codex` must resolve on PATH — missing → one clear
+   message, exit 2, nothing installed. No other codex interaction of any kind.
+2. **Pre-flight.** Check all five targets; on any conflict, report and exit 1
    before touching anything.
-2. **Install.** Per target, first mechanism that works, in order: **symlink →
-   NTFS junction (directories only: `cmd //c mklink /J`, paths via `cygpath -w`,
-   no admin) → plain copy.** Validate after creating — read `SKILL.md` through
-   the installed path; on failure, remove the broken attempt before trying the
-   next mechanism. Record the mode per target in `MACHINE.md`.
-3. **Verify and record** in `MACHINE.md` (gitignored, repo root): OS; codex binary,
-   version (floor: ≥0.144, the version whose flag behavior
-   was measured), login state; Claude Code version (symlinked-skill support floor:
-   unverified — see Pending Measurements); **dry probe** — the mandatory
-   flag set with a trivial prompt at pinned low effort (deliberately *not*
-   max: this is a connectivity check, not a review):
-   `codex exec --sandbox read-only --strict-config
-   --skip-git-repo-check -c model_reasoning_effort=low -c 'web_search="disabled"'
-   -c approval_policy="never" "Reply OK" </dev/null` (full override set per the
-   explicit-on-every-call rule; web disabled — a probe needs no web)
-   (skippable with `--no-probe`; a
-   probe failure is reported, never silently certified); **sandbox read-scope
-   probe** — a read-only dispatch asked to read a file outside the worktree, result
-   recorded for `loop-review`; **ambient context** — global
-   `$CODEX_HOME/AGENTS.md` present? `~/.agents/skills/` contents?
-4. **Report.** One status line per target — linked / copied / no-op / conflict —
-   so a second run printing five no-ops *is* the idempotency proof; if any target
-   was copy-installed, state that updates require rerunning `install.sh` after
-   `git pull`; always end with: *"Reminder: your system's global AGENTS.md still
-   applies to this loop's codex dispatches."*
+3. **Install.** Per target: delete the owned copy if present, `cp -R` fresh
+   from the clone, validate `SKILL.md` is readable at the destination, then
+   drop the marker. A failed copy is removed and reported (`failed` line,
+   final exit 2).
+4. **Report.** One status line per target, then the plain-speech line:
+   *"Of course, codex dispatches follow your machine's own AGENTS.md and codex
+   config — your rules, not this pack's."*
 
-No uninstall script: remove the links/copies, done.
+No uninstall script: delete the five folders, done. No state files: the repo
+generates nothing, tracks nothing, and can itself be deleted after installing —
+it is only needed again to update.
 
 ---
 
@@ -430,16 +421,16 @@ No uninstall script: remove the links/copies, done.
 
 | # | Requirement | Acceptance check |
 |---|---|---|
-| R1 | Fresh Linux install: five skills resolve, `MACHINE.md` written | run `install.sh` on a clean `$CLAUDE_CONFIG_DIR`; new Claude session lists all five skills |
-| R2 | Idempotent rerun: second run changes nothing, prompts nothing | run twice; second run prints one no-op line per target, exits 0 |
+| R1 | Fresh Linux install: five skills resolve | run `install.sh` on a clean `$CLAUDE_CONFIG_DIR`; new Claude session lists all five skills |
+| R2 | Idempotent rerun: converges to repo state, prompts nothing | run twice; second run re-copies, prints one line per target, exits 0 |
 | R3 | Conflicts fail clean: foreign target → nothing installed, conflict named, exit non-zero | seed a fake `$CLAUDE_CONFIG_DIR/skills/codex`; install touches nothing, names the path, exits 1; remove it → rerun installs |
-| R4 | Fallback chain validates and cleans up | force symlink failure; junction/copy used; sentinel readable through installed path; no broken link left |
-| R5 | Dry probe uses the mandatory flag set at pinned low effort, cannot hang, failure is loud | probe command contains `</dev/null` and all mandatory flags; disconnect network → install reports probe failure |
+| R4 | Installed skills are self-contained plain directories | delete the clone; installed skills keep working; re-clone restores the update channel |
+| R5 | codex missing → game over: clear message, exit 2, nothing installed | run with a PATH that lacks codex; message printed, exit 2, no targets created |
 | R6 | Post-install output includes AGENTS.md reminder and copy-mode warning when applicable | inspect output in both modes |
 | R7 | Review ledger round-trips across cold sessions | a verification round dispatched from a fresh session using the ledger, the git baseline, and the standard reading-order inputs — no conversational context |
 | R8 | Implementation shape is web-dark and workspace-confined | dispatch echoes `web_search="disabled"`, banner shows `workspace-write`; canary run reports no web tool |
 | R9 | OS matrix honest: Linux measured, macOS expected, Windows provisional | README states it; Windows flips only after peer-round measurements |
-| R10 | Public hygiene: no personal/machine data committed | `.gitignore` covers `MACHINE.md`; repo scan finds no personal data |
+| R10 | Public hygiene: no personal/machine data committed, nothing generated into the repo | repo scan finds no personal data; install leaves the clone untouched |
 
 ---
 
@@ -488,15 +479,30 @@ No uninstall script: remove the links/copies, done.
   profile-divergence problem class (three review findings and one design debate)
   ceases to exist. Measured before ruling: `-c` overrides beat base-config
   defaults; headless `exec` needs no approval knob (shapes pin it anyway).
-- **One install script (bash), fallback chain symlink → junction → copy** — bash is
-  the single interpreter guaranteed on every supported platform (Git Bash is a
-  declared prerequisite on Windows); the chain degrades gracefully where symlinks
-  need Developer Mode.
+- **Plugin-style copies, no links, no state** (owner-initiated reversal of the
+  symlink design): under the unconditional `git pull && ./install.sh` habit,
+  symlinks' one advantage (pull-only updates) is redundant, while their costs
+  were real — a junction fallback with Windows-only code, a Developer Mode
+  question, an ownership registry (`MACHINE.md`), and a Claude version floor
+  for symlinked skills that plain directories don't have. Copies are what every
+  plugin manager ships; ownership travels as a marker file inside the copy; the
+  clone becomes a pure delivery medium the user may even delete. Hand-edits to
+  installed copies are overwritten by the next update — repo truth wins
+  structurally.
 - **Repo as sync channel, local memory as lab bench** — distilled lessons travel as
   skill edits via git. This is the fix for "one machine works better than another."
 - **Peer review stays a protocol, not a skill, until it recurs** — YAGNI.
 - **`loop-` prefix on phase skills** — avoids collisions with built-ins and generic
   names; `codex` keeps its established name.
+- **KISS purge of the installer** (owner-initiated reversal): no probes, no
+  login checks, no ambient detection — the installer runs no codex commands and
+  reads nothing outside this repo and the skills dir. Rationale: broken tools
+  fail loudly at first use and need no advance scouts; and a public installer
+  that touches another tool's credentials file — even a bare existence check —
+  reads as a scam in a screenshot, because trust is about what is touched, not
+  what is done with it. The one silent-failure risk (confined sandbox reads →
+  invented review context) is closed structurally instead of by measurement:
+  `loop-review` always stages external dependencies. Ruled by the owner.
 - **MIT license** — public utility pack, no reason for anything heavier.
 
 ## Open Questions
@@ -506,22 +512,15 @@ None. (Gate rule: this section must be empty before dispatching review.)
 ## Pending Measurements (not open decisions)
 
 Decisions above are made; these facts must be measured on the machine that can
-measure them, recorded in its `MACHINE.md`, and folded back here only if they
-invalidate a decision.
+measure them, and folded back here only if they invalidate a decision.
 
 Windows machine (during its peer-review round):
 - Does codex CLI run natively there or under WSL — and what does its **sandbox
   actually enforce** on that platform? Until measured, that machine dispatches
   `read-only` only.
-- Which install mechanism succeeds under its Git Bash: symlink, junction, or copy?
 - Confirm `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME` resolution under Windows
   (`%USERPROFILE%`), including when Claude runs native and codex runs under WSL
   (different homes → both recorded).
-
-Any machine, first install:
-- Claude Code minimum version for symlinked skills (reported floor exists in public
-  docs but is unverified here; the installer records the local version either way).
-- Sandbox read-scope probe result (outside-worktree reads allowed or confined).
 
 Measured on the origin machine (2026-07-15/16), recorded for transparency: codex-cli
 0.144.4; `web_search` enum `disabled|cached|indexed|live` and `disabled` verified

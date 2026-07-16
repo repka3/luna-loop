@@ -53,3 +53,27 @@ One new finding:
 
 **Both documents ready for implementation dispatches** pending the owner's
 commit.
+
+## Revision 4 — owner-initiated KISS purge (2026-07-16, post-implementation)
+
+Follows the spec ledger's REVERSAL 2. Implementation note: the owner also ruled
+that the pack itself is implemented by the driver, not dispatched to codex —
+the deliverables are instructions for a Claude runtime (native-speaker
+authorship), prose has no test net (the loop's own codex-implements rationale
+doesn't hold), and codex authoring `skills/codex/SKILL.md` would be the dog
+writing its own leash. Plan changes: installer contract stripped to
+game-over-check + link + record + report; `--no-probe` flag deleted (nothing
+left to skip); probe/login/ambient steps deleted; loop-review contract:
+always-stage external dependencies; verify battery updated (PATH-without-codex
+test added; probe tests removed).
+
+## Revision 5 — owner-initiated plugin-style install (2026-07-16)
+
+Follows the spec ledger's REVERSAL 3. Plain copies with an in-dir `.luna-loop`
+marker dropped last as a receipt; symlinks at a target are conflicts; no
+`MACHINE.md`, no `.gitignore`, no force-copy seam, no mechanism chain.
+Implementation transitioned live on the origin machine: five old symlinks
+removed, battery green (fresh, idempotent re-copy, dir conflict, symlink
+conflict, codex-missing exit 2, bad arg exit 64, no personal paths), real
+install re-run as plain directories with markers verified. Installed skills now
+owe nothing to the clone.

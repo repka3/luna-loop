@@ -119,3 +119,41 @@ class) is what this reversal completes. Spec and plan amended in place.
 Per the loop's proportionality dial (owner ruling): re-verification of both
 amended documents runs as **one combined codex round at high effort**, not a
 fresh max series — the amendment is a deletion of a subsystem, not new design.
+
+## REVERSAL 2 — owner-initiated KISS purge (2026-07-16, post-implementation)
+
+The owner, reading the implemented `install.sh`, reopened the installer's
+entire verify apparatus. Rulings: no AGENTS.md detection (the disclosure is one
+line of speech, not a check); no auth.json existence check (a public installer
+touching another tool's credentials file reads as a scam in a screenshot —
+trust is about what is touched, not what is done with it); no connectivity
+probe (broken tools fail loudly at first use and need no advance scouts); and,
+completing the logic, no read-scope probe either — its silent-failure risk
+(confined sandbox → invented review context) is closed structurally instead:
+`loop-review` now **always stages external dependencies**, no measurement
+needed. Net: the installer runs no codex commands, makes no network calls, and
+reads nothing outside the repo and the skills dir; `codex` missing on PATH is
+game over (clear message, exit 2). `MACHINE.md` shrinks to OS, codex
+path/version, and the targets table — every remaining field has a consumer.
+KISS recorded as a design principle in the spec's Decisions.
+
+## REVERSAL 3 — owner-initiated plugin-style install (2026-07-16)
+
+The owner completed the KISS arc by reopening the symlink design itself. Audit:
+under the unconditional `git pull && ./install.sh` habit, symlinks' one
+advantage (pull-only updates) is redundant; their costs were real — junction
+fallback with Windows-only code, a Developer Mode question, the `MACHINE.md`
+ownership registry (a state file whose single consumer was copy-mode rerun
+recognition, everything else being a gitignored — therefore never-syncing —
+cache of two one-second commands), and a Claude version floor for symlinked
+skills that plain directories don't have.
+
+Resolution: **plain copies, plugin-style.** Ownership travels with the artifact
+as a `.luna-loop` marker dropped inside the copy, last, as a receipt; symlinks
+at a target are conflicts. Deleted outright: the mechanism chain, `cygpath`/
+`mklink`, mode tracking, `MACHINE.md`, `.gitignore` (its only entry), the
+`LUNA_LOOP_FORCE_COPY` test seam, the copy-mode NOTE, requirement R4's fallback
+chain (now: self-containment — delete the clone, skills keep working), and two
+Windows pending measurements (junction viability, symlink version floor). The
+clone is a pure delivery medium. Day's arc, recorded for posterity: symlinks →
+junction fallback → ownership registry → marker file → cp -R.
