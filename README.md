@@ -32,9 +32,13 @@ reopening one is a reversal, and reversals stop the line.
 - Codex CLI **≥ 0.144**, logged in
 
 Platform status, honestly: **Linux — measured. macOS — expected, unverified.
-Windows — provisional** until its pending measurements land (codex sandbox
-behavior there is unverified; keep dispatches read-only on Windows until you
-have measured it yourself).
+Windows — installer and call shapes measured and working; codex's own sandbox
+enforcement first-measured 2026-07-16** (native codex, not WSL). That
+measurement — `docs/notes/2026-07-16-2309-windows-codex-sandbox-delete-measurement.md`
+— found codex's Windows sandbox blocks writes but not deletes; it does not
+change normal loop use, but it means on Windows you keep dispatches read-only,
+point codex only at content you trust, and re-measure, since the behavior is
+being patched upstream.
 
 ## Install
 

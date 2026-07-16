@@ -40,8 +40,10 @@ outside this boundary get cut, not folded.*
   nothing and reads nothing in `$CODEX_HOME`. "Blind" in this document means *our
   side sends no priming* — it is a claim about the prompt, not about codex's config.
 - Supported platforms: Linux (measured), macOS (expected, unverified), Windows
-  **provisional** until its pending measurements land. **Git Bash is a hard
-  prerequisite on Windows** — the installer and call shapes are bash-only by design.
+  **first-measured 2026-07-16** (native codex, not WSL; installer + call shapes
+  work; codex sandbox enforcement recorded in `docs/notes/`). **Git Bash is a
+  hard prerequisite on Windows** — the installer and call shapes are bash-only by
+  design.
 - Facts that cannot be verified from the authoring machine are never asserted —
   they live in Pending Measurements, owned by the machine that can measure them.
 
@@ -520,13 +522,18 @@ None. (Gate rule: this section must be empty before dispatching review.)
 Decisions above are made; these facts must be measured on the machine that can
 measure them, and folded back here only if they invalidate a decision.
 
-Windows machine (during its peer-review round):
-- Does codex CLI run natively there or under WSL — and what does its **sandbox
-  actually enforce** on that platform? Until measured, that machine dispatches
-  `read-only` only.
-- Confirm `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME` resolution under Windows
-  (`%USERPROFILE%`), including when Claude runs native and codex runs under WSL
-  (different homes → both recorded).
+Windows machine (peer-review round) — **MEASURED 2026-07-16**; full method and
+results in `docs/notes/2026-07-16-2309-windows-codex-sandbox-delete-measurement.md`:
+- codex runs **native** on Windows (not WSL); `$CODEX_HOME`→`~/.codex` and
+  `$CLAUDE_CONFIG_DIR`→`~/.claude` both resolve under `%USERPROFILE%`.
+- Sandbox enforcement: blocks writes, does **not** block deletes (the Windows
+  restricted-token gates write access, not the DELETE right). Under `read-only`,
+  destructive commands are stopped by codex's command classifier — deterministic
+  but shape-based, so an obfuscated command bypasses it and deletes via the OS
+  gap. This is delete-only, Windows-only, and reachable only by a deliberately
+  evasive command from hostile input; it does **not** affect normal loop use.
+  Re-measure — actively patched upstream (PR openai/codex#31138 merged
+  2026-07-08). Windows dispatches stay `read-only` + trusted-content-only.
 
 Measured on the origin machine (2026-07-15/16), recorded for transparency: codex-cli
 0.144.4; `web_search` enum `disabled|cached|indexed|live` and `disabled` verified
