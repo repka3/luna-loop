@@ -59,6 +59,9 @@ or the executor meets them mid-task and stops.
   2–5-minute micro-steps. The executor is a capable model, not a typist.
 - **Dependency order:** a task may only consume what earlier tasks or the
   repo already provide.
+- **The spec wins.** If this plan and the gated spec disagree, the plan is
+  wrong — fix the plan. If reality disagrees with both, that is a spec
+  correction (dated, in place), never a planning improvisation.
 
 ## Self-review
 

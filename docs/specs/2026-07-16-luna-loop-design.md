@@ -10,7 +10,9 @@ that keeps that loop identical across every machine that runs it.
 `docs/specs/2026-07-16-luna-loop-design.review.md`.
 Amended 2026-07-16 (owner-approved): `loop-execute` added — see Decisions.
 Amended 2026-07-17 (owner-approved): failure walkthroughs and the
-boundary-human lens folded into `loop-spec` and `loop-review` — see Decisions.
+boundary-human lens folded into `loop-spec` and `loop-review`; the authority
+chain (spec > plan; reality wins only via dated in-place correction) written
+into the Loop — see Decisions.
 
 ---
 
@@ -85,6 +87,12 @@ A **gate** is the checkpoint a document must pass before anything downstream is
 built on it: review → triage → rework rounds repeat until the findings dry up and
 the human declares convergence. A gated document is settled foundation — reopening
 one is a reversal, and reversals stop the line.
+
+**Authority chain:** the spec is the single behavior authority. If plan and spec
+disagree, the spec wins and the plan is corrected. If reality disagrees with both,
+nobody improvises: stop, re-litigate with evidence, and if reality wins, correct
+the spec **in place with the evidence dated** — the authority document never
+silently rots, and every machine resolves the same conflict the same way.
 
 **Effort rule:** **max** for the document gates (spec and plan reviews, and their
 verification rounds) and for tiebreaks between conflicting positions — a flaw that
@@ -588,6 +596,12 @@ it is only needed again to update.
   in self-review; `loop-review` gains the boundary-walk instruction in every
   dispatch. The pack forces the human question onto the record; who wins when
   experience and elegance conflict stays each project's own decision.
+- **Authority chain written down (2026-07-17, owner-approved).** Spec beats
+  plan; reality beats both, but only through stop-and-relitigate — and when
+  reality wins, the spec is corrected in place with the evidence dated, never
+  silently bypassed. An arbitration rule only works if it is written before
+  the dispute; unwritten, two machines resolve the same conflict two different
+  ways, which is exactly the drift this pack exists to kill.
 
 ## Open Questions
 

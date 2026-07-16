@@ -55,3 +55,10 @@ Run inline, fix inline, no re-review:
    references either exists (receipt: file:line, command output) or is
    defined by this spec (receipt: section). Reviewers verify internal
    consistency, not existence; this check has no other owner.
+
+## The spec is the authority
+
+Once gated, the spec is the single behavior authority: plans and executors
+defer to it. When reality proves it wrong, it is corrected **in place, with
+the evidence dated** — never silently bypassed; downstream documents then
+follow the correction.
