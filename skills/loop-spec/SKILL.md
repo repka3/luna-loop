@@ -24,7 +24,9 @@ makes lexicographic order chronological).
 3. **Architecture / approach** — scaled to complexity; a few sentences for
    simple things.
 4. **Requirements** — numbered, testable, exact values. No ranges standing in
-   for decisions you didn't make.
+   for decisions you didn't make. Every tunable constant states what breaks
+   if it is too low and what breaks if it is too high — the failure-mode
+   comment travels into the code.
 5. **Failure walkthroughs** — for every failure mode in scope, narrate the
    timeline as the person at the system boundary experiences it — the user
    at the keyboard, the API consumer, the operator on call: what they see,

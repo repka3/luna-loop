@@ -12,7 +12,9 @@ Amended 2026-07-16 (owner-approved): `loop-execute` added — see Decisions.
 Amended 2026-07-17 (owner-approved): failure walkthroughs and the
 boundary-human lens folded into `loop-spec` and `loop-review`; the authority
 chain (spec > plan; reality wins only via dated in-place correction) written
-into the Loop; Windows posture ruled — every call shape legal — see Decisions.
+into the Loop; Windows posture ruled — every call shape legal; three one-line
+folds (receipts conditional, tunable failure modes, plate-format round
+reports) — see Decisions.
 
 ---
 
@@ -201,6 +203,11 @@ Turns an idea into either a spec-ready decision set or a note. Core rules, inlin
   source, count the bytes, do the arithmetic first, and bring the settled answer
   instead of the menu. The recommended option carries the *highest* verification
   bar, not the lowest, because recommendations anchor.
+- **If it exists, it has receipts.** When the idea concerns the behavior of
+  anything that already runs — your system or a dependency — claims get receipts
+  (file:line, probe output) before decisions build on them; when the work starts
+  from a symptom, the symptom becomes a number first. In a greenfield this rule
+  simply never fires.
 - **Settle implementation details yourself and say so**; bring the user only
   decisions that are genuinely theirs.
 - Scope check first: if the request spans multiple independent subsystems, decompose
@@ -222,7 +229,8 @@ Output: `docs/specs/YYYY-MM-DD-HHMM-<topic>.md`. Template sections:
    arrive calibrated instead of maximal.
 3. **Architecture / approach** — scaled to complexity.
 4. **Requirements** — numbered, testable, exact values. No ranges standing in for
-   decisions.
+   decisions. Every tunable constant states what breaks if it is too low and what
+   breaks if it is too high — the failure-mode comment travels into the code.
 5. **Failure walkthroughs** — for every failure mode in scope, narrate the
    timeline as the person at the system boundary experiences it (user at the
    keyboard, API consumer, operator on call): what they see, what they lose,
@@ -338,7 +346,9 @@ Rounds:
   list), and the git baseline so the reviewer can diff the rework itself. Instruct:
   "review these fixes; do not re-litigate settled decisions or cut findings."
 - **Report each round to the user and wait for their approval** before dispatching
-  the next one.
+  the next one. Lead with the finding count, severity split, and reversal count;
+  per finding, one line ending in what it costs the person at the boundary, plus
+  a fold/cut recommendation — arranged so the convergence call takes minutes.
 - **Track reversals, not counts.** Healthy series: shrinking findings, zero reopened
   decisions. State it each round.
 - **A reversal stops the loop** — bring both sides' evidence to the human.
@@ -612,6 +622,14 @@ it is only needed again to update.
   uncommitted work), and a field week of Windows workspace-write
   implementation preceded the measurement without incident. Trusted content
   in any mode; re-measure on upgrades.
+- **Three one-line folds (2026-07-17, owner-approved).** From the same field
+  week, small enough to state whole: `loop-interview` — when the idea concerns
+  anything that already runs, claims get receipts and symptoms become numbers
+  first (never fires in a greenfield, by design); `loop-spec` — every tunable
+  constant states what breaks too low and too high, and the comment travels
+  into the code; `loop-review` — round reports lead with count, severity
+  split, and reversal count, and each finding line ends in the boundary-human
+  cost plus a fold/cut recommendation, so the convergence call takes minutes.
 
 ## Open Questions
 

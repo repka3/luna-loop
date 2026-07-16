@@ -18,6 +18,11 @@ note. The interview is a dialogue, not a questionnaire.
   bring the settled answer instead of the menu. The option you recommend
   carries the *highest* verification bar, not the lowest: recommendations
   anchor, so an unchecked recommendation is worse than an unchecked option.
+- **If it exists, it has receipts.** When the idea concerns the behavior of
+  anything that already runs — your system or a dependency — claims get
+  receipts (file:line, probe output) before decisions build on them; when the
+  work starts from a symptom, the symptom becomes a number first. In a
+  greenfield this rule simply never fires.
 - **Settle implementation details yourself and say so.** Bring the user only
   decisions that are genuinely theirs; report the ones you settled in passing
   so they can veto.

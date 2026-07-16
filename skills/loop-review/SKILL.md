@@ -76,7 +76,10 @@ noise into signal. Per finding, write one line of what it costs if real, then:
   (with cut list), and the baseline — plus the instruction "review these
   fixes; do not re-litigate settled decisions or cut findings."
 - **Report each round to the user and wait for their approval** before the
-  next dispatch.
+  next dispatch. Lead with the finding count, severity split, and reversal
+  count; per finding, one line ending in what it costs the person at the
+  boundary, plus your fold/cut recommendation — arranged so the convergence
+  call takes minutes, not a re-read.
 - **Track reversals, not counts.** A healthy series shrinks and never reopens
   settled ground. A reversal stops the loop — bring both sides' evidence to
   the human.
