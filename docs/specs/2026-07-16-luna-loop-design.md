@@ -399,14 +399,20 @@ prompts — there is no interactive path**. Installed copies are never
 hand-edited; the repo is the source of truth.
 
 Steps:
-1. **Game-over check.** `codex` must resolve on PATH — missing → one clear
-   message, exit 2, nothing installed. No other codex interaction of any kind.
+1. **Environment gates — fail loud and early, create nothing.** `codex` must
+   resolve on PATH; the Claude config directory must already exist (Claude
+   Code creates it — its absence means this machine isn't ready or the path is
+   wrong) and must be absolute. Any gate failure → one clear message, exit 2.
+   No other codex interaction of any kind.
 2. **Pre-flight.** Check all five targets; on any conflict, report and exit 1
    before touching anything.
-3. **Install.** Per target: delete the owned copy if present, `cp -R` fresh
+3. **Install.** Per target: remove the owned copy — **never recursively**:
+   delete exactly the two files the pack writes (`SKILL.md`, the marker), then
+   `rmdir`, which refuses a non-empty directory, so anything the user put
+   inside survives and the target reports `failed` instead. Then `cp -R` fresh
    from the clone, validate `SKILL.md` is readable at the destination, then
-   drop the marker. A failed copy is removed and reported (`failed` line,
-   final exit 2).
+   drop the marker. A failed copy is cleaned the same non-recursive way and
+   reported (`failed` line, final exit 2).
 4. **Report.** One status line per target, then the plain-speech line:
    *"Of course, codex dispatches follow your machine's own AGENTS.md and codex
    config — your rules, not this pack's."*

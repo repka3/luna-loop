@@ -352,11 +352,12 @@ grep -q 'git pull && ./install.sh' README.md
   1. **Resolve** the skills dir from `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` and
      the repo root from the script's own location, never the caller's cwd. No
      flags; any argument → usage line, exit 64.
-  2. **Game-over check:** `command -v codex` empty → one clear message, exit
-     **2**, nothing installed. No other codex interaction of any kind — no
-     network calls, no codex commands, no reads of `$CODEX_HOME`, ever. A
-     broken or logged-out codex fails loudly at first real use, which is
-     better diagnosis than any proxy check.
+  2. **Environment gates (fail loud, create nothing):** `command -v codex`
+     empty → message, exit **2**; the Claude config dir must already exist
+     and be an absolute path → otherwise message, exit **2** (Claude Code
+     creates that dir; its absence means wrong machine or wrong path — never
+     `mkdir -p` a missing parent). No other codex interaction of any kind —
+     no network calls, no codex commands, no reads of `$CODEX_HOME`, ever.
   3. **Pre-flight all five targets.** Pack-owned = plain directory containing
      the `.luna-loop` marker. Anything else present (foreign dir, file, any
      symlink) → `conflict <target> -> <dest> (existing: <kind>)` per conflict,

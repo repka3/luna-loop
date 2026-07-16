@@ -77,3 +77,30 @@ removed, battery green (fresh, idempotent re-copy, dir conflict, symlink
 conflict, codex-missing exit 2, bad arg exit 64, no personal paths), real
 install re-run as plain directories with markers verified. Installed skills now
 owe nothing to the clone.
+
+## Code review — install.sh (codex, high effort, 2026-07-16)
+
+4 findings: 1 blocker / 1 major / 2 minor. **4 fold, 0 cut** — all correctness
+bugs in the minimal design; none re-litigated the KISS rulings. Reversals: 0.
+
+| id | sev | finding (one line) | disposition | fix, verified |
+|----|-----|--------------------|-------------|---------------|
+| C1 | blocker | Failed `rm -rf` didn't gate `cp -R` — new copy nests inside the survivor, old SKILL.md passes validation, stale install blessed with exit 0 | fold | Deletion is a hard gate: cp only into a confirmed-absent dest; verified with a chmod-555 skills dir → `failed (could not remove previous copy)`, exit 2, no nested copy |
+| C2 | major | Marker-creation failure ignored → false success, unowned partial copy | fold | `: > marker` joined to the success chain; any failure → remnants removed, `failed` line, exit 2 |
+| C3 | minor | Unset HOME under `set -u` → bash's own exit status, outside the 0/1/2/64 contract | fold | Explicit guard: no CLAUDE_CONFIG_DIR and no HOME → clear message, exit 2; verified with `env -u HOME -u CLAUDE_CONFIG_DIR` |
+| C4 | minor | Validation tested existence (`-f`) not readability | fold | `-f && -r` |
+
+Reviewer's verdict pre-fix: "not safe to publish as-is." Post-fix battery: all
+original scenarios plus locked-dir and no-HOME — green. Quoting, spaces,
+`cp -R`, `: >` judged suitable for macOS bash 3.2 and Git Bash.
+
+Two further findings from the **owner's own read** of the script, same day:
+
+| id | sev | finding (one line) | disposition | fix, verified |
+|----|-----|--------------------|-------------|---------------|
+| C5 | major | `rm -rf` as the deletion instrument — bounded in practice (hardcoded names, marker-gated, quoted, set -u) but recursive force deletion fails the screenshot test and would plow through unexpected content | fold | `remove_ours()`: delete exactly the two files the pack writes, then `rmdir` — which refuses a non-empty dir. Verified: a user file planted inside an owned skill dir survives; run reports `failed`, exit 2. `grep -c "rm -rf" install.sh` → 0 |
+| C6 | major | No parent validation — a bogus or relative `CLAUDE_CONFIG_DIR` made `mkdir -p` build the wrong tree and report a silent wrong-install as success | fold | Environment gates: the Claude config dir must pre-exist (Claude Code creates it) and be absolute; verified: nonexistent dir → message + exit 2 + nothing created; relative path → exit 2 |
+
+Running score for install.sh: codex found the correctness bugs (C1–C4); the
+owner found the trust bugs (C5–C6). Both kinds were invisible from inside the
+author's intent.
