@@ -9,6 +9,8 @@ that keeps that loop identical across every machine that runs it.
 **Status:** Draft, reworked after review round 1. Ledger:
 `docs/specs/2026-07-16-luna-loop-design.review.md`.
 Amended 2026-07-16 (owner-approved): `loop-execute` added — see Decisions.
+Amended 2026-07-17 (owner-approved): failure walkthroughs and the
+boundary-human lens folded into `loop-spec` and `loop-review` — see Decisions.
 
 ---
 
@@ -213,16 +215,26 @@ Output: `docs/specs/YYYY-MM-DD-HHMM-<topic>.md`. Template sections:
 3. **Architecture / approach** — scaled to complexity.
 4. **Requirements** — numbered, testable, exact values. No ranges standing in for
    decisions.
-5. **Acceptance** — how each requirement is checked (command, observation, or
+5. **Failure walkthroughs** — for every failure mode in scope, narrate the
+   timeline as the person at the system boundary experiences it (user at the
+   keyboard, API consumer, operator on call): what they see, what they lose,
+   how long until they know. Walkthroughs may only reference inputs, commands,
+   and states that already exist or that the spec itself defines — receipts
+   required. A design change that worsens a walkthrough needs a recorded
+   decision, not silence.
+6. **Acceptance** — how each requirement is checked (command, observation, or
    review), so "done" is an observation, not an opinion.
-6. **Decisions** — each with its *why*, so review rounds don't re-litigate them.
-7. **Open questions** — must be empty before the review gate; if it isn't, go back
+7. **Decisions** — each with its *why*, so review rounds don't re-litigate them.
+8. **Open questions** — must be empty before the review gate; if it isn't, go back
    to `loop-interview`. Facts that only another machine can verify go in a
    **Pending Measurements** list with a named owner instead.
 
 Self-review before the gate (run inline, fix inline): placeholder scan ("TBD",
 vague requirements), internal consistency, scope (one plan's worth?), ambiguity
-(any requirement readable two ways → pick one, write it down).
+(any requirement readable two ways → pick one, write it down), existence scan
+(everything a walkthrough references exists or is defined by this spec, with
+receipts — reviewers verify internal consistency, not existence; this check has
+no other owner).
 
 ### 3. `loop-plan` — write the implementation plan
 
@@ -287,6 +299,11 @@ Composing the dispatch — **blind means no out-of-band advocacy, not no context
   reading order there, and delete it when the round completes — then check
   `git status` so nothing staged can ever be committed. In-worktree dependencies
   are cited by path; no staging needed.
+- **Instruct the boundary walk.** The reviewer is told to walk the document's
+  failure timelines as the person at the system boundary and name what that
+  person sees and loses per finding — a review that answers only convergent
+  technical questions certifies only what it was asked; its confidence does
+  not generalize to the human question unless the dispatch asks it.
 - Effort **max**. Ask for numbered findings with references and severities.
 
 **The ledger** — every gated document gets `<doc-basename>.review.md` beside it,
@@ -557,6 +574,20 @@ it is only needed again to update.
   dispatch), the STOP procedure (diagnose → amend plan → commit → re-dispatch
   fresh), flake discipline (3 consecutive greens AND a cause), and
   verify-hardest-what-the-executor-could-not-run.
+- **Failure walkthroughs and the boundary-human lens (2026-07-17,
+  owner-approved after the pack's first field week).** A review answers only
+  the questions it is asked: on the origin project, a design that froze the
+  user's world for tens of seconds passed two max-effort review rounds —
+  every technical question (consistency, computability, regressions) answered
+  yes — and died to one human question about what the person at the keyboard
+  experiences. The gap recurred twice more, once as a walkthrough that
+  referenced an input which did not exist. Folded as **process, not policy**:
+  `loop-spec` gains a mandatory failure-walkthrough section (narrate each
+  failure as the person at the system boundary experiences it; reference only
+  what exists or what the spec defines, with receipts) and an existence scan
+  in self-review; `loop-review` gains the boundary-walk instruction in every
+  dispatch. The pack forces the human question onto the record; who wins when
+  experience and elegance conflict stays each project's own decision.
 
 ## Open Questions
 

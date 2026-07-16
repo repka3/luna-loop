@@ -35,6 +35,12 @@ shape, effort max.
   and check `git status` afterward — the directory is deliberately NOT
   gitignored, so a leftover is visible instead of silently committable.
   In-worktree dependencies are cited by path; no staging needed.
+- **Instruct the boundary walk.** Tell the reviewer to walk the document's
+  failure timelines as the person at the system boundary (user, API consumer,
+  operator on call) and name what that person sees and loses per finding. A
+  review that answers only convergent technical questions certifies only what
+  it was asked — its confidence does not generalize to the human question
+  unless the dispatch asks it.
 - The promptfile lives in the session scratchpad, never in the project.
 - Ask for numbered findings with severities and references.
 

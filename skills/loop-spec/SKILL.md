@@ -25,11 +25,18 @@ makes lexicographic order chronological).
    simple things.
 4. **Requirements** — numbered, testable, exact values. No ranges standing in
    for decisions you didn't make.
-5. **Acceptance** — how each requirement is checked (command, observation, or
+5. **Failure walkthroughs** — for every failure mode in scope, narrate the
+   timeline as the person at the system boundary experiences it — the user
+   at the keyboard, the API consumer, the operator on call: what they see,
+   what they lose, how long until they know. A walkthrough may only
+   reference inputs, commands, and states that already exist or that this
+   spec itself defines — receipts required. A design change that worsens a
+   walkthrough needs a recorded decision, not silence.
+6. **Acceptance** — how each requirement is checked (command, observation, or
    review), so "done" is an observation, not an opinion.
-6. **Decisions** — each with its *why*, so review rounds don't re-litigate
+7. **Decisions** — each with its *why*, so review rounds don't re-litigate
    them and future readers don't reopen them by accident.
-7. **Open Questions** — must be **empty** before the review gate; if it
+8. **Open Questions** — must be **empty** before the review gate; if it
    isn't, go back to `loop-interview`. Facts that only another machine or a
    later phase can verify are not open questions — they go in a **Pending
    Measurements** list with a named owner.
@@ -44,3 +51,7 @@ Run inline, fix inline, no re-review:
 3. **Scope** — is this one plan's worth, or does it need decomposition?
 4. **Ambiguity** — could any requirement be read two ways? Pick one, write it
    down.
+5. **Existence scan** — every input, command, or state a walkthrough
+   references either exists (receipt: file:line, command output) or is
+   defined by this spec (receipt: section). Reviewers verify internal
+   consistency, not existence; this check has no other owner.
