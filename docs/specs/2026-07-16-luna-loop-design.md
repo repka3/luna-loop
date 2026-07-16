@@ -12,7 +12,7 @@ Amended 2026-07-16 (owner-approved): `loop-execute` added — see Decisions.
 Amended 2026-07-17 (owner-approved): failure walkthroughs and the
 boundary-human lens folded into `loop-spec` and `loop-review`; the authority
 chain (spec > plan; reality wins only via dated in-place correction) written
-into the Loop — see Decisions.
+into the Loop; Windows posture ruled — every call shape legal — see Decisions.
 
 ---
 
@@ -602,6 +602,16 @@ it is only needed again to update.
   silently bypassed. An arbitration rule only works if it is written before
   the dispute; unwritten, two machines resolve the same conflict two different
   ways, which is exactly the drift this pack exists to kill.
+- **Windows posture: every call shape stays legal (2026-07-17, owner-ruled).**
+  The first draft of the 2026-07-16 measurement note concluded "keep Windows
+  dispatches read-only" — read strictly, a ban on implementation dispatches
+  for the platform. Overruled with the measurement's own data: the delete gap
+  does not distinguish sandbox modes, so read-only buys nothing; the real
+  mitigations are structural (the loop feeds codex only authored content,
+  write dispatches run web-disabled, commit-per-task bounds delete damage to
+  uncommitted work), and a field week of Windows workspace-write
+  implementation preceded the measurement without incident. Trusted content
+  in any mode; re-measure on upgrades.
 
 ## Open Questions
 
@@ -623,7 +633,10 @@ results in `docs/notes/2026-07-16-2309-windows-codex-sandbox-delete-measurement.
   gap. This is delete-only, Windows-only, and reachable only by a deliberately
   evasive command from hostile input; it does **not** affect normal loop use.
   Re-measure — actively patched upstream (PR openai/codex#31138 merged
-  2026-07-08). Windows dispatches stay `read-only` + trusted-content-only.
+  2026-07-08). Owner-ruled 2026-07-17: every call shape stays legal on Windows
+  (a field week of workspace-write implementation preceded this measurement);
+  the mitigation is trusted content in **any** mode — the gap does not
+  distinguish modes — plus the commit-per-task cadence bounding delete damage.
 
 Measured on the origin machine (2026-07-15/16), recorded for transparency: codex-cli
 0.144.4; `web_search` enum `disabled|cached|indexed|live` and `disabled` verified

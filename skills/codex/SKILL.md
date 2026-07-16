@@ -22,6 +22,13 @@ does whatever it decides the goal needs, and only the kernel says no. Never use
 `--dangerously-bypass-approvals-and-sandbox`, and never use `workspace-write` for
 work the user has not approved.
 
+Platform note (measured 2026-07-16, codex-cli 0.144.5, native Windows): the
+Windows sandbox blocks writes but **not deletes, in any mode** — codex's
+command classifier, a heuristic, is the last line against a hostile-input
+delete there. Every shape stays legal on Windows; the mitigation is trusted
+content in any mode, not read-only. Re-measure on upgrades — being patched
+upstream.
+
 ## The three call shapes
 
 Every flag is mandatory on every call.

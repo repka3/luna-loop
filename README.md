@@ -35,10 +35,15 @@ Platform status, honestly: **Linux — measured. macOS — expected, unverified.
 Windows — installer and call shapes measured and working; codex's own sandbox
 enforcement first-measured 2026-07-16** (native codex, not WSL). That
 measurement — `docs/notes/2026-07-16-2309-windows-codex-sandbox-delete-measurement.md`
-— found codex's Windows sandbox blocks writes but not deletes; it does not
-change normal loop use, but it means on Windows you keep dispatches read-only,
-point codex only at content you trust, and re-measure, since the behavior is
-being patched upstream.
+— found codex's Windows sandbox blocks writes but not deletes, **in every
+sandbox mode** — so retreating to read-only would not close it. Normal loop
+use does not change and every call shape stays legal on Windows,
+workspace-write implementation included: the gap is reachable only through
+hostile input, which the loop structurally never feeds codex (you author
+every prompt and plan; write dispatches run web-disabled). On Windows, then:
+trusted content only in any mode, commit-per-task to bound worst-case delete
+damage, and re-measure on codex upgrades — the behavior is being patched
+upstream.
 
 ## Install
 

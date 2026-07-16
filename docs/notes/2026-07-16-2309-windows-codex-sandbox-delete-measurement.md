@@ -72,10 +72,18 @@ tracked files from the main checkout); #25566 (sandbox help still describes
 Windows as restricted-token only). This is churning fast — **re-measure on codex
 upgrades.**
 
-## Standing guidance (confirmed, not changed)
+## Standing guidance (owner-ruled 2026-07-17; supersedes this section's first draft)
 
-Windows dispatches stay `read-only` and point codex only at content you trust —
-which was already the pack's posture. This measurement only explains *why* that
-matters more on Windows than on Linux/macOS: the OS-level backstop that would
-catch a classifier bypass elsewhere is absent here, so on Windows the classifier
-is the last line, and it is a heuristic. Nothing about honest loop use changes.
+Every call shape stays legal on Windows, workspace-write implementation
+included — ruled by the owner after a field week of exactly that use, and
+supported by this measurement's own data: the delete gap does not distinguish
+sandbox modes (deletion succeeded under `read-only` too), so retreating to
+read-only buys nothing. The real mitigations are structural: point codex only
+at content you trust **in any mode** (the loop feeds it only authored prompts
+and plans; write dispatches run web-disabled), lean on the commit-per-task
+cadence to bound worst-case delete damage to uncommitted work, and re-measure
+on codex upgrades. What this measurement changes is emphasis, not rules: on
+Windows the OS backstop that catches a classifier bypass elsewhere is absent,
+so the classifier — a heuristic — is the last line against *hostile input*,
+and the trusted-content rule matters more here than on Linux/macOS. Nothing
+about honest loop use changes.
