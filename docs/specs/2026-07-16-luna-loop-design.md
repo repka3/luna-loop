@@ -1,9 +1,10 @@
 # luna-loop — Design Spec
 
-**Goal:** A self-contained, public, portable skill pack that encodes one development
-loop — interview → spec → independent review → triage → plan → independent review →
-triage → dispatch → verify — for a Claude Code driver with an OpenAI Codex CLI
-reviewer/executor.
+**Goal:** A self-contained, public, cross-platform (Linux, macOS, Windows) skill
+pack that encodes one development loop — interview → spec → independent review →
+triage → plan → independent review → triage → dispatch → verify — for a Claude Code
+driver with an OpenAI Codex CLI reviewer/executor, and serves as the sync channel
+that keeps that loop identical across every machine that runs it.
 
 **Status:** Draft, pre-review. This spec is the pack's first artifact and follows its
 own template.
@@ -24,6 +25,9 @@ outside this boundary get cut, not folded.*
   manually — skills fire when invoked, they do not auto-chain.
 - Codex is treated as **contained by sandbox flags, never by prompt instructions**.
   Prompt-level "don't do X" lines are not relied on for anything.
+- Supported platforms: Linux, macOS, Windows (Claude Code native, which carries Git
+  Bash). Facts that cannot be verified from the authoring machine are never asserted
+  — they live in Pending Measurements, owned by the machine that can measure them.
 
 **Non-goals:**
 - Not a plugin; no marketplace packaging. Clone + `install.sh` is the distribution.
@@ -60,6 +64,30 @@ Effort economics, carried from measured practice: **max** for spec/plan reviews
 (a flaw that survives a document review is copied into everything built on it) and
 for tiebreaks; **high** for implementation, code review, exploration (code has a
 safety net — tests and diff review; prose has none).
+
+---
+
+## Multi-Machine Model
+
+The problem this repo actually solves: several machines each running the same loop
+drift apart, because each machine's agent accumulates local memory and local fixes
+that never propagate — until one machine simply "works better" than another and
+nobody can say why.
+
+- **The repo is the sync channel.** Machine-local memory is where lessons are
+  *discovered*; this repo is where they are *distilled*. When practice on one
+  machine beats the pack, the delta becomes a skill edit, committed, pulled
+  everywhere. Skills are the shared memory; local memory is the lab bench.
+- **`MACHINE.md` (gitignored) holds what must not sync:** verified per-machine facts
+  — binary paths, versions, sandbox behavior, which install mode succeeded.
+- **Peer review (warm), distinct from the codex gate (cold):** an agent instance on
+  another machine, with different lived experience, reviews the spec and skills
+  against its own memory — "what did your long autonomous sessions teach you that
+  this pack is missing?" Opposite protocol from the codex gate: there, experience is
+  withheld to buy independence; here, experience is the value, so priming with it is
+  the point. Findings go through the same fold / cut / escalate triage.
+- Peer review is a **protocol, not a skill (yet)**: run it manually on the next
+  machine; distill it into a skill only if it recurs. YAGNI.
 
 ---
 
@@ -224,17 +252,25 @@ round discipline) moves to `review`, where it fires when it's needed.
 
 ## Install
 
-`install.sh`, idempotent, no root:
-1. Symlink each `skills/<name>` into `~/.claude/skills/<name>` (skill updates ride
-   `git pull`). Refuse to clobber a non-symlink existing dir; say so and skip.
+`install.sh`, idempotent, no root/admin, runs under bash — one script for all
+platforms. On Windows that means Git Bash, which Claude Code on native Windows
+already carries; bash is the one interpreter present on every supported machine,
+and a parallel PowerShell script would be a second implementation waiting to drift.
+
+1. Link or copy each `skills/<name>` into `~/.claude/skills/<name>` using the first
+   mechanism that works on this machine, recording which: **symlink → NTFS junction
+   (`cmd //c mklink /J`, no admin) → plain copy.** Link/junction installs update via
+   `git pull` alone; copy installs need `install.sh` rerun after every pull — the
+   script says so explicitly at the end. Refuse to clobber an existing dir it didn't
+   create; say so and skip.
 2. Copy `codex/sol-high-fast.config.toml` to `~/.codex/` if absent; if present and
    different, show a diff and ask.
-3. Verify: codex binary on PATH, version, login state, profile resolves
-   (`codex exec --profile sol-high-fast` dry probe). Write results to `MACHINE.md`
-   at the repo root (gitignored).
+3. Verify and record in `MACHINE.md` at the repo root (gitignored): OS, codex binary
+   on PATH + version + login state, profile resolves
+   (`codex exec --profile sol-high-fast` dry probe), install mode used per skill.
 4. Print what was linked, copied, verified, skipped.
 
-No uninstall script needed: remove the symlinks, done.
+No uninstall script needed: remove the links/copies, done.
 
 ---
 
@@ -257,7 +293,26 @@ No uninstall script needed: remove the symlinks, done.
   yardstick and reviewer calibration, generalizing a measured failure (withheld
   context → invented system → wrong-severity blocker).
 - **MIT license** — public utility pack, no reason for anything heavier.
+- **One install script (bash), fallback chain symlink → junction → copy** — bash is
+  the single interpreter guaranteed on every supported platform; the fallback chain
+  degrades gracefully where Windows symlinks need Developer Mode.
+- **Repo as sync channel, local memory as lab bench** — distilled lessons travel as
+  skill edits via git. This is the fix for "one machine works better than another."
+- **Peer review stays a protocol, not a skill, until it recurs** — YAGNI.
 
 ## Open Questions
 
 None. (Gate rule: this section must be empty before dispatching review.)
+
+## Pending Measurements (not open decisions)
+
+The decisions above are made; these facts must be measured on the Windows machine
+during its peer-review round, recorded in its `MACHINE.md`, and folded back here
+only if they invalidate a decision:
+
+- Does codex CLI run natively there or under WSL — and what does its **sandbox
+  actually enforce** on that platform? The sandbox table is load-bearing; until
+  measured, that machine dispatches `read-only` only.
+- Which install mechanism succeeds under its Git Bash: symlink, junction, or copy?
+- Confirm `~/.claude/skills/` and `~/.codex/` resolve to the expected paths under
+  Windows (`%USERPROFILE%`).
