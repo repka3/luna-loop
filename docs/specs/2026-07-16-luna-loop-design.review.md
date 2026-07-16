@@ -99,3 +99,23 @@ Series: 3 rounds, 32 findings total (23 + 7 + 2), 0 reversals across all rounds,
 2 cuts, 5 owner rulings. The two unreviewed owner additions above entered at gate
 time with the owner as their reviewer. This document is settled foundation; any
 change to it from here is a reversal and stops the line.
+
+## REVERSAL — owner-initiated (2026-07-16, post-gate)
+
+The owner reopened the shipped-profile decision (six targets, `codex/` in repo
+layout, profile-symlink ruling from round 2). Grounds, measured before ruling:
+every semantic setting rides `-c` overrides (a base config defaulting to effort
+max ran at the pinned level, no profile involved); headless `exec` needs no
+approval knob (shapes pin `approval_policy="never"` anyway); the remaining
+profile contents — model, pricing tier — are the machine owner's cost choices,
+which a public pack must not impose.
+
+Resolution: **no shipped codex profile.** Five targets, one kind; the pack never
+writes into `$CODEX_HOME`; call shapes pin effort/web/approvals explicitly;
+model and tier inherit each machine's base config. The round-2 profile-symlink
+ruling is superseded — its underlying principle (no special cases, no drift
+class) is what this reversal completes. Spec and plan amended in place.
+
+Per the loop's proportionality dial (owner ruling): re-verification of both
+amended documents runs as **one combined codex round at high effort**, not a
+fresh max series — the amendment is a deletion of a subsystem, not new design.

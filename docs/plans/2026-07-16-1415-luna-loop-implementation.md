@@ -1,50 +1,58 @@
 # luna-loop Implementation Plan
 
 **Goal:** Implement the luna-loop pack — five skills, one installer, README,
-license, gitignore — exactly as specified by the gated spec at
-`docs/specs/2026-07-16-luna-loop-design.md` (gated 2026-07-16, commit `406551a`).
+license, gitignore — exactly as specified by the gated spec.
 
-**Executor contract:** each task below is one dispatch: sandbox
-`workspace-write`, effort high, web search disabled, working root = the repo
-root. Every dispatch promptfile = the **Global Constraints** section verbatim +
-the one task. The gated spec is on disk and is the authority; where this plan
-compresses it, the spec wins.
+Rework history: revision 2 after gate-2 round 1 (13 findings, all folded);
+revision 3 after the owner-initiated profile reversal — no shipped codex
+profile, five targets, semantics pinned per call shape (see
+`2026-07-16-1415-luna-loop-implementation.review.md`).
 
 ---
 
 ## Global Constraints
 
-- This repo is **public**. Nothing personal, machine-identifying, or secret in any
-  committed file: no absolute home paths, no hostnames, no email addresses. The
-  only gitignored file is `MACHINE.md` (and editor droppings if you must — keep
-  `.gitignore` minimal).
-- All shell code is **bash** (Git Bash compatible on Windows): no arrays required
-  beyond bash 3.2, no GNU-only flags without a portable fallback, no root/admin,
-  **no interactive prompts anywhere** — there is no interactive path.
+*(Every dispatch promptfile = this entire section verbatim + the one task.)*
+
+- **Authority:** the gated spec at `docs/specs/2026-07-16-luna-loop-design.md`
+  (gated at commit `406551a`) governs; where this plan compresses it, the spec
+  wins. Read the spec sections a task names before writing.
+- **Dispatch settings (every task):** sandbox `workspace-write`, reasoning
+  effort high, `-c 'web_search="disabled"'`, `-c approval_policy="never"`.
+  Working root = the repo root: the directory containing this plan's
+  `docs/plans/`.
+- This repo is **public**. Nothing personal, machine-identifying, or secret in
+  any committed file: no absolute home paths, no hostnames, no email addresses.
+  `.gitignore` contains exactly one line: `MACHINE.md`.
+- All shell code is **bash** (Git Bash compatible on Windows): no root/admin,
+  no GNU-only flags without a portable fallback, **no interactive prompts
+  anywhere** — there is no interactive path.
 - Config roots: `CLAUDE_CONFIG_DIR` (default `~/.claude`) and `CODEX_HOME`
   (default `~/.codex`), always via `${VAR:-default}`.
-- **Six install targets, one rule** — five skill dirs + one profile file:
+- **Five install targets, one rule** — the five skill dirs
   `skills/loop-interview`, `skills/loop-spec`, `skills/loop-plan`,
-  `skills/loop-review`, `skills/codex` → `$CLAUDE_CONFIG_DIR/skills/<name>`;
-  `codex/sol-high-fast.config.toml` → `$CODEX_HOME/sol-high-fast.config.toml`.
+  `skills/loop-review`, `skills/codex` → `$CLAUDE_CONFIG_DIR/skills/<name>`.
+  The pack never writes into `$CODEX_HOME`.
 - Codex CLI version floor: **0.144**.
 - Artifact naming everywhere it is mentioned: `YYYY-MM-DD-HHMM-<topic>.md`
   (24-hour, local machine time), under `docs/specs/`, `docs/plans/`,
-  `docs/notes/` relative to the driver's project root.
+  `docs/notes/` relative to the driver's project root. Skills `mkdir -p` the
+  target directory before writing — user projects will not have it.
 - License: MIT.
-- **Skill frontmatter, verbatim** (YAML, first thing in each SKILL.md —
-  `name:` and `description:` exactly as below):
+- **Skill frontmatter, verbatim.** Each SKILL.md begins with exactly (values
+  double-quoted; line 2 is `name:`, line 3 is `description:`):
 
-  | name | description |
+  | name | description (the full double-quoted value) |
   |---|---|
-  | loop-interview | Pre-spec interview: turn an idea into settled decisions or a loose note. One decision per message; verify options before offering them. Use when brainstorming or shaping work that is not yet a spec. |
-  | loop-spec | Write a specification from settled decisions: goal, trust boundary and non-goals, numbered requirements with acceptance checks, decisions with their why. Use when an interview has produced spec-ready decisions. |
-  | loop-plan | Turn a gated spec into an implementation plan whose tasks are cold-executor dispatches: exact files, interfaces, contracts verbatim, verify commands, STOP rule. Use after a spec has passed its review gate. |
-  | loop-review | Run the independent review gate on a spec or plan: compose a blind codex dispatch, triage findings fold/cut/escalate, keep the review ledger, run diff-only rounds. Dispatches cost real money — invoke only on explicit user request. |
-  | codex | Invoke Codex CLI as reviewer or executor: sandbox table, three call shapes, effort economics, never resume, run handling. Side-effecting and billable — invoke only on explicit user request or when another luna-loop skill directs a dispatch. |
+  | loop-interview | "Pre-spec interview: turn an idea into settled decisions or a loose note. One decision per message; verify options before offering them. Use when brainstorming or shaping work that is not yet a spec." |
+  | loop-spec | "Write a specification from settled decisions: goal, trust boundary and non-goals, numbered requirements with acceptance checks, decisions with their why. Use when an interview has produced spec-ready decisions." |
+  | loop-plan | "Turn a gated spec into an implementation plan whose tasks are cold-executor dispatches: exact files, interfaces, contracts verbatim, verify commands, STOP rule. Use after a spec has passed its review gate." |
+  | loop-review | "Run the independent review gate on a spec or plan: compose a blind codex dispatch, triage findings fold/cut/escalate, keep the review ledger, run diff-only rounds. Dispatches cost real money — invoke only on explicit user request." |
+  | codex | "Invoke Codex CLI as reviewer or executor: sandbox table, three call shapes, effort economics, never resume, run handling. Side-effecting and billable — invoke only on explicit user request or when another luna-loop skill directs a dispatch." |
 
 - **`MACHINE.md` format, verbatim** (written by `install.sh` at repo root;
-  gitignored; regenerated on every run):
+  gitignored; regenerated on every run that installs or no-ops — a preflight
+  conflict exit leaves any existing `MACHINE.md` untouched):
 
   ```markdown
   # MACHINE — generated by install.sh. Gitignored; never commit.
@@ -52,8 +60,9 @@ compresses it, the spec wins.
   generated: <YYYY-MM-DD-HHMM>
   claude_config_dir: <resolved path>
   codex_home: <resolved path>
-  claude_version: <output or unknown>
-  codex_version: <output>          # floor 0.144 — warn below
+  claude_version: <output|unknown>
+  codex_path: <command -v codex output|missing>
+  codex_version: <output|missing>      # floor 0.144 — warn below
   codex_login: <ok|missing>
   probe: <ok|failed|skipped>
   read_scope: <unrestricted|confined|unprobed>
@@ -63,8 +72,11 @@ compresses it, the spec wins.
   ## targets
   | target | dest | mode | owned |
   |---|---|---|---|
-  | skills/loop-interview | <dest> | <symlink|junction|copy> | yes |
-  ...all six rows...
+  | skills/loop-interview | <dest> | <symlink|junction|copy|failed> | yes |
+  | skills/loop-spec | <dest> | <symlink|junction|copy|failed> | yes |
+  | skills/loop-plan | <dest> | <symlink|junction|copy|failed> | yes |
+  | skills/loop-review | <dest> | <symlink|junction|copy|failed> | yes |
+  | skills/codex | <dest> | <symlink|junction|copy|failed> | yes |
   ```
 
 - **STOP rule (applies to every task):** if this plan and reality disagree in a
@@ -73,76 +85,7 @@ compresses it, the spec wins.
 
 ---
 
-## Task 1: `install.sh`, `.gitignore`, `LICENSE`
-
-**Files:**
-- Create: `install.sh` (mode 755)
-- Create: `.gitignore`
-- Create: `LICENSE`
-
-**Interfaces:**
-- Produces: the `MACHINE.md` format (Global Constraints), the per-target status
-  line format below, exit codes below. Task 6's README documents these; do not
-  deviate from them.
-- Consumes: nothing from other tasks.
-
-**Contracts:**
-- `.gitignore` content, exactly two lines: `MACHINE.md` and `.luna-loop-staging/`.
-- `LICENSE`: stock MIT text, copyright line `Copyright (c) 2026 luna-loop
-  contributors`.
-- `install.sh` behavior, in order:
-  1. **Resolve roots** from `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` and
-     `${CODEX_HOME:-$HOME/.codex}`; resolve the repo root from the script's own
-     location (`cd "$(dirname "$0")" && pwd`), never from the caller's cwd.
-  2. **Pre-flight all six targets.** A target is pack-owned iff it is a
-     symlink/junction resolving into this clone, or listed `owned: yes` with
-     `mode: copy` in an existing `MACHINE.md`. Any target that exists and is not
-     pack-owned → print every such conflict
-     (`conflict  <dest>  (existing <file|dir|symlink→where>)`), install
-     **nothing**, exit **1**.
-  3. **Install each target**, first mechanism that works: `ln -s` → (directories
-     only, when `uname -s` matches `MINGW*|MSYS*`) `cmd //c mklink /J
-     "$(cygpath -w "$dest")" "$(cygpath -w "$src")"` → `cp -R` (file: `cp`).
-     Validate by reading real content through the installed path (`SKILL.md`
-     for skill dirs; byte-compare the TOML for the profile). A failed attempt is
-     removed before the next mechanism is tried.
-  4. **Verify:** codex binary present (`command -v codex`) and `codex --version`
-     (warn below 0.144); Claude version via `claude --version` if present, else
-     `unknown`; login state from `$CODEX_HOME/auth.json` existence; **dry probe**
-     unless `--no-probe`: `codex exec --sandbox read-only --profile sol-high-fast
-     --strict-config --skip-git-repo-check "Reply OK" </dev/null` — nonzero exit
-     or empty output → `probe: failed` and the script exits **2** after writing
-     MACHINE.md and the report (never silently certified); **read-scope probe**
-     unless `--no-probe`: create a temp file under `$HOME` outside the repo, ask
-     via the same call shape whether codex can read it back, record
-     `unrestricted|confined`, delete the temp file; **ambient context**:
-     `$CODEX_HOME/AGENTS.md` present/absent and the names under
-     `$HOME/.agents/skills/` if any.
-  5. **Write `MACHINE.md`** in the exact Global Constraints format.
-  6. **Report:** one status line per target — `linked|copied|no-op|conflict
-     <target> -> <dest>`; if any target is `copied`, print `NOTE: copy-mode
-     targets refresh only on rerun — update with: git pull && ./install.sh`;
-     always end with `Reminder: your system's global AGENTS.md still applies to
-     this loop's codex dispatches.`
-  - Exit codes: **0** success or all-no-op; **1** conflict (nothing installed);
-    **2** verification failure (targets installed, probe failed).
-  - Flags: `--no-probe` only. Anything else → usage message, exit 64.
-
-**Verify:**
-- `bash -n install.sh` → exit 0.
-- Run `CLAUDE_CONFIG_DIR=$(mktemp -d) CODEX_HOME=$(mktemp -d) ./install.sh
-  --no-probe` from the repo root → exit 0, six `linked` lines, MACHINE.md
-  written, reminder line printed. Rerun identical command → six `no-op` lines,
-  exit 0.
-- Seed `mkdir -p <tmp CLAUDE_CONFIG_DIR>/skills/codex` (plain dir) → run →
-  `conflict` line naming it, nothing else installed, exit 1.
-- `! grep -rn "$HOME\|/home/" install.sh .gitignore LICENSE` → no matches.
-
-**STOP rule:** as in Global Constraints.
-
----
-
-## Task 2: `skills/codex/SKILL.md`
+## Task 1: `skills/codex/SKILL.md`
 
 **Files:**
 - Create: `skills/codex/SKILL.md`
@@ -150,7 +93,8 @@ compresses it, the spec wins.
 **Interfaces:**
 - Produces: the call shapes and effort table that `loop-review` and `loop-plan`
   reference by the phrase "dispatch per the codex skill".
-- Consumes: frontmatter row `codex` and MACHINE.md format from Global Constraints.
+- Consumes: frontmatter row `codex` and the MACHINE.md format (Global
+  Constraints).
 
 **Contracts:** distill spec §"5. `codex`" (read it in full) into a skill of
 mechanics only. Required content, all of it:
@@ -159,171 +103,216 @@ mechanics only. Required content, all of it:
   filesystem/process containment; never
   `--dangerously-bypass-approvals-and-sandbox`.
 - The three call shapes verbatim from the spec, including
-  `-c 'web_search="disabled"'` on the implementation shape and the note that the
-  enum is `disabled|cached|indexed|live`.
-- Why each flag exists (profile vs silent expensive defaults, strict-config fails
-  loudly, skip-git-repo-check, `</dev/null` hang, file-backed prompts over ~6k
-  chars — labeled as an origin-machine measurement).
-- Effort table: max = document gates and tiebreaks; high = everything the driver
-  re-verifies; never max for work a test suite re-reviews free.
+  `-c 'web_search="disabled"'` on the implementation shape and the note that
+  the config enum is `disabled|cached|indexed|live`.
+- Why each flag exists (explicit effort vs silent expensive base-config
+  defaults, strict-config fails loudly, skip-git-repo-check, `</dev/null`
+  hang, file-backed prompts over ~6k chars — labeled as an origin-machine
+  measurement). Every shape pins `-c approval_policy="never"`; the skill says
+  plainly that model and pricing tier deliberately inherit the machine's own
+  base config — the owner's cost choices, never the pack's.
+- Effort table: max = document gates and tiebreaks; high = everything the
+  driver re-verifies; never max for work a test suite re-reviews free.
 - Never resume a session — and why (anchored reviewer; executor state is on
   disk); replacement is a fresh, blind, narrowly scoped dispatch.
 - Run handling: background for long runs, `-o <file>` capture, banner glance
-  (`reasoning effort`, `sandbox`) on max dispatches, subagent isolation for long
-  output, distilled reporting; for implementation runs the driver reads the diff
-  and runs the tests itself.
+  (`reasoning effort`, `sandbox`) on max dispatches, subagent isolation for
+  long output, distilled reporting; for implementation runs the driver reads
+  the diff and runs the tests itself. Promptfiles and raw reviewer output live
+  in the driver's scratchpad, outside the repo — never as project files.
 - Ambient disclosure: codex loads the machine's global AGENTS.md and its own
-  skills on every call; no per-invocation off switch (measured on 0.144); point
-  at MACHINE.md's ambient fields.
+  skills on every call; no per-invocation off switch (measured on 0.144);
+  point at MACHINE.md's ambient fields.
 - Zero hardcoded machine facts; per-machine facts live in MACHINE.md.
 
-**Verify:**
-- `head -5 skills/codex/SKILL.md` shows the exact frontmatter from Global
-  Constraints.
-- `grep -c "web_search" skills/codex/SKILL.md` ≥ 1;
-  `grep -n "resume" skills/codex/SKILL.md` present;
-  `! grep -rn "/home/\|luna-lavoro" skills/codex/SKILL.md`.
+**Verify (all must pass):**
+```bash
+sed -n '2p' skills/codex/SKILL.md | grep -qxF 'name: codex'
+sed -n '3p' skills/codex/SKILL.md | grep -qxF 'description: "Invoke Codex CLI as reviewer or executor: sandbox table, three call shapes, effort economics, never resume, run handling. Side-effecting and billable — invoke only on explicit user request or when another luna-loop skill directs a dispatch."'
+grep -q 'web_search="disabled"' skills/codex/SKILL.md
+grep -q 'web_search="live"' skills/codex/SKILL.md
+grep -q 'model_reasoning_effort=max' skills/codex/SKILL.md
+grep -q 'model_reasoning_effort=high' skills/codex/SKILL.md
+grep -q 'approval_policy="never"' skills/codex/SKILL.md
+grep -qi 'never resume' skills/codex/SKILL.md
+grep -q 'MACHINE.md' skills/codex/SKILL.md
+! grep -rn '/home/' skills/codex/SKILL.md
+```
 
 **STOP rule:** as in Global Constraints.
 
 ---
 
-## Task 3: `skills/loop-review/SKILL.md`
+## Task 2: `skills/loop-review/SKILL.md`
 
 **Files:**
 - Create: `skills/loop-review/SKILL.md`
 
 **Interfaces:**
-- Consumes: the phrase-level contract "dispatch per the codex skill" (call
-  mechanics live there, not here); MACHINE.md `read_scope` field.
+- Consumes: "dispatch per the codex skill" (call mechanics live there, not
+  here); MACHINE.md `read_scope` field.
 - Produces: the ledger schema that future reviews of any document follow.
 
 **Contracts:** distill spec §"4. `loop-review`" (read it in full). Required
 content, all of it:
 - Blind = no out-of-band advocacy, not no context: withhold conversation and
-  advocacy; always send the whole document (its Decisions section included) plus
-  every artifact it cites/depends on/inherits from, in reading order; the
+  advocacy; always send the whole document (its Decisions section included)
+  plus every artifact it cites/depends on/inherits from, in reading order; the
   invented-system failure mode stated as the reason.
+- Promptfiles and raw reviewer output live in the driver's scratchpad, outside
+  the reviewed project — never committed, never left as project files.
 - Read-scope check before composing: `MACHINE.md read_scope: confined` → copy
-  dependencies into `.luna-loop-staging/` inside the worktree, point the reading
-  order there, delete after the round, check `git status` afterward.
+  dependencies into `.luna-loop-staging/` inside the worktree, point the
+  reading order there, delete after the round, and check `git status`
+  afterward (the directory is deliberately NOT gitignored, so a leftover is
+  visible).
 - Ledger: `<doc-basename>.review.md` beside the document, committed; header =
-  document path + reviewer identity; per round = git baseline ref, finding rows
-  (`id | severity | one-line | disposition | reason/fold location`), reversal
-  count stated explicitly, escalation outcomes.
-- Triage: fold / cut / escalate, one cost line per finding; cuts argued against
-  the document's Trust Boundary section.
+  document path + reviewer identity; per round = git baseline ref, finding
+  rows (`id | severity | one-line | disposition | reason/fold location`),
+  reversal count stated explicitly, escalation outcomes.
+- Non-git projects: no baselines and no diff-only rounds — run full-document
+  rounds, verify cleanup manually, and state both in the round report.
+- Triage: fold / cut / escalate, one cost line per finding; cuts argued
+  against the document's Trust Boundary section.
 - Rounds: verification rounds are diff-only (reworked doc + ledger + baseline;
-  "do not re-litigate settled decisions or cut findings"); report each round to
-  the user and wait for approval before the next dispatch; track reversals, a
-  reversal stops the loop; convergence is the human's call.
+  "do not re-litigate settled decisions or cut findings"); report each round
+  to the user and wait for approval before the next dispatch; track reversals,
+  a reversal stops the loop; convergence is the human's call.
 - Effort: max, per the codex skill's document-gate row.
 
-**Verify:**
-- Frontmatter exact per Global Constraints.
-- `grep -n "fold" skills/loop-review/SKILL.md` and `grep -n "reversal"
-  skills/loop-review/SKILL.md` both present;
-  `! grep -rn "/home/" skills/loop-review/SKILL.md`.
+**Verify (all must pass):**
+```bash
+sed -n '2p' skills/loop-review/SKILL.md | grep -qxF 'name: loop-review'
+sed -n '3p' skills/loop-review/SKILL.md | grep -qxF 'description: "Run the independent review gate on a spec or plan: compose a blind codex dispatch, triage findings fold/cut/escalate, keep the review ledger, run diff-only rounds. Dispatches cost real money — invoke only on explicit user request."'
+grep -q 'fold' skills/loop-review/SKILL.md
+grep -qi 'reversal' skills/loop-review/SKILL.md
+grep -q '.luna-loop-staging' skills/loop-review/SKILL.md
+grep -q 'scratchpad' skills/loop-review/SKILL.md
+! grep -rn '/home/' skills/loop-review/SKILL.md
+```
 
 **STOP rule:** as in Global Constraints.
 
 ---
 
-## Task 4: `skills/loop-interview/SKILL.md` and `skills/loop-spec/SKILL.md`
+## Task 3: `skills/loop-interview/SKILL.md` and `skills/loop-spec/SKILL.md`
 
 **Files:**
 - Create: `skills/loop-interview/SKILL.md`
 - Create: `skills/loop-spec/SKILL.md`
 
 **Interfaces:**
-- Consumes: frontmatter rows and artifact naming from Global Constraints.
-- Produces: the spec template sections that `loop-plan` (Task 5) assumes exist
-  (Goal / Trust Boundary / Requirements / Acceptance / Decisions / Open
-  questions / Pending Measurements).
+- Consumes: frontmatter rows and artifact naming (Global Constraints).
+- Produces: the spec template that `loop-plan` (Task 4) assumes: sections
+  Goal / Trust Boundary & Non-Goals / Architecture-approach / Requirements /
+  Acceptance / Decisions / Open questions — plus a Pending Measurements list
+  for facts only another machine can verify.
 
 **Contracts:** distill spec §"1. `loop-interview`" and §"2. `loop-spec`" (read
 both in full). Required content:
 - interview: one decision per message; an option is a claim (verify before
-  offering; the recommended option carries the highest verification bar); settle
-  implementation details yourself and say so; scope-check/decompose first; two
-  exits — spec-ready decisions → loop-spec, or a loose note at
-  `docs/notes/YYYY-MM-DD-HHMM-<topic>.md` (roadmap checkboxes, research
-  findings; deliberately loose).
-- spec: output `docs/specs/YYYY-MM-DD-HHMM-<topic>.md`; the seven template
-  sections with the Trust Boundary section mandatory and named as the triage
-  yardstick that also goes in the reviewer's reading order; Requirements
-  numbered/testable/exact; Open questions empty before the gate, machine-ownable
-  facts to Pending Measurements instead; the four-point self-review
-  (placeholders, consistency, scope, ambiguity) run and fixed inline.
+  offering; the recommended option carries the highest verification bar);
+  settle implementation details yourself and say so; scope-check/decompose
+  first; two exits — spec-ready decisions → loop-spec, or a loose note at
+  `docs/notes/YYYY-MM-DD-HHMM-<topic>.md` (`mkdir -p docs/notes` first;
+  roadmap checkboxes, research findings; deliberately loose).
+- spec: output `docs/specs/YYYY-MM-DD-HHMM-<topic>.md` (`mkdir -p docs/specs`
+  first); the template sections listed under Interfaces, with Trust Boundary
+  mandatory and named as the triage yardstick that also goes in the reviewer's
+  reading order; Requirements numbered/testable/exact; Open questions empty
+  before the gate, machine-ownable facts to Pending Measurements instead; the
+  four-point self-review (placeholders, consistency, scope, ambiguity) run and
+  fixed inline.
 
-**Verify:**
-- Both frontmatters exact per Global Constraints.
-- `grep -n "HHMM" skills/loop-interview/SKILL.md skills/loop-spec/SKILL.md` —
-  present in both; `! grep -rn "/home/" skills/loop-interview skills/loop-spec`.
+**Verify (all must pass):**
+```bash
+sed -n '2p' skills/loop-interview/SKILL.md | grep -qxF 'name: loop-interview'
+sed -n '3p' skills/loop-interview/SKILL.md | grep -qxF 'description: "Pre-spec interview: turn an idea into settled decisions or a loose note. One decision per message; verify options before offering them. Use when brainstorming or shaping work that is not yet a spec."'
+sed -n '2p' skills/loop-spec/SKILL.md | grep -qxF 'name: loop-spec'
+sed -n '3p' skills/loop-spec/SKILL.md | grep -qxF 'description: "Write a specification from settled decisions: goal, trust boundary and non-goals, numbered requirements with acceptance checks, decisions with their why. Use when an interview has produced spec-ready decisions."'
+grep -q 'HHMM' skills/loop-interview/SKILL.md
+grep -q 'HHMM' skills/loop-spec/SKILL.md
+grep -q 'mkdir -p' skills/loop-interview/SKILL.md
+grep -q 'mkdir -p' skills/loop-spec/SKILL.md
+grep -qi 'trust boundary' skills/loop-spec/SKILL.md
+! grep -rn '/home/' skills/loop-interview skills/loop-spec
+```
 
 **STOP rule:** as in Global Constraints.
 
 ---
 
-## Task 5: `skills/loop-plan/SKILL.md`
+## Task 4: `skills/loop-plan/SKILL.md`
 
 **Files:**
 - Create: `skills/loop-plan/SKILL.md`
 
 **Interfaces:**
-- Consumes: the spec template section names (Task 4's contract), the codex
-  skill's implementation call shape by the phrase "dispatch per the codex
-  skill".
+- Consumes: the spec template section names (Task 3's Produces), "dispatch per
+  the codex skill".
 - Produces: the plan format every future implementation plan follows.
 
 **Contracts:** distill spec §"3. `loop-plan`" (read it in full). Required
 content:
 - A plan is a sequence of cold-executor dispatches; extraction contract: every
-  dispatch promptfile = Global Constraints header verbatim + the one task,
-  always — nothing "implicitly included".
-- Output `docs/plans/YYYY-MM-DD-HHMM-<topic>.md`; header = goal + Global
-  Constraints copied verbatim from the spec.
+  dispatch promptfile = the plan's Global Constraints section verbatim + the
+  one task, always — nothing "implicitly included".
+- Output `docs/plans/YYYY-MM-DD-HHMM-<topic>.md` (`mkdir -p docs/plans`
+  first); header = goal + Global Constraints copied verbatim from the spec.
 - Per task: Files (exact paths), Interfaces (Consumes/Produces, exact
-  signatures), contracts verbatim (schemas/types copied in, not referenced),
-  Verify (exact commands + expected output), STOP rule.
-- Pre-dispatch reality scan (`rg` every named symbol/path so the file whitelist
-  is complete before gating).
-- Hard rules: no placeholders (list the canonical offenders); executor-facing
-  text carries zero skill/conversation references (state the
-  `REQUIRED SUB-SKILL:` anti-pattern); task granularity = smallest unit worth a
-  reviewer's gate, not micro-steps.
-- Self-review: spec coverage, placeholder scan, interface consistency.
+  signatures), contracts verbatim (schemas/types copied in, not referenced —
+  except documents already on disk and gated, which are cited by path and
+  section), Verify (exact commands + expected outcome), STOP rule.
+- Pre-dispatch reality scan (`rg`/`ls` every named path and symbol so the
+  file whitelist and preconditions are complete before gating).
+- Hard rules: no placeholders ("TBD", "add appropriate error handling",
+  "similar to task N", `...`-elided content, steps that describe without
+  showing); executor-facing text carries zero skill/conversation references
+  (the `REQUIRED SUB-SKILL:` anti-pattern, named); task granularity = smallest
+  unit worth a reviewer's gate, not micro-steps; task order must respect the
+  dependency graph — a task may only consume what earlier tasks or the repo
+  already provide.
+- Self-review: spec coverage, placeholder scan, interface consistency,
+  dependency-order check.
 
-**Verify:**
-- Frontmatter exact per Global Constraints.
-- `grep -n "STOP" skills/loop-plan/SKILL.md` present;
-  `grep -n "placeholder" skills/loop-plan/SKILL.md` present;
-  `! grep -rn "/home/" skills/loop-plan`.
+**Verify (all must pass):**
+```bash
+sed -n '2p' skills/loop-plan/SKILL.md | grep -qxF 'name: loop-plan'
+sed -n '3p' skills/loop-plan/SKILL.md | grep -qxF 'description: "Turn a gated spec into an implementation plan whose tasks are cold-executor dispatches: exact files, interfaces, contracts verbatim, verify commands, STOP rule. Use after a spec has passed its review gate."'
+grep -q 'STOP' skills/loop-plan/SKILL.md
+grep -qi 'placeholder' skills/loop-plan/SKILL.md
+grep -qi 'reality scan' skills/loop-plan/SKILL.md
+grep -q 'mkdir -p' skills/loop-plan/SKILL.md
+! grep -rn '/home/' skills/loop-plan
+```
 
 **STOP rule:** as in Global Constraints.
 
 ---
 
-## Task 6: `README.md`
+## Task 5: `README.md`
 
 **Files:**
 - Create: `README.md`
 
 **Interfaces:**
-- Consumes: install.sh's status-line format, exit codes, and flags (Task 1
-  contracts); the five frontmatter names (Global Constraints); the loop diagram
-  and gate definition from the spec (read spec §"The Loop").
+- Consumes: the installer contract from Task 6 (status lines, exit codes,
+  `--no-probe`, never-prompts, fail-clean) — the *contract as written there*,
+  not the file, which does not exist yet; the five frontmatter names (Global
+  Constraints); the loop diagram and gate definition from spec §"The Loop".
 
 **Contracts:** a README for a stranger with no context. Required sections:
 - What this is (three sentences max) and the loop diagram with the gate
   definition, taken from the spec.
 - Prerequisites: bash (Git Bash on Windows — hard prerequisite), Claude Code,
-  Codex CLI ≥0.144 logged in; platform matrix stated honestly — Linux measured,
-  macOS expected, Windows provisional.
-- Install: `git clone … && cd luna-loop && ./install.sh`; update:
-  `git pull && ./install.sh`; uninstall: remove the links/copies. Document exit
-  codes 0/1/2/64, `--no-probe`, and that the installer never prompts and never
-  touches files it does not own (conflicts fail clean).
+  Codex CLI ≥0.144 logged in; platform matrix stated honestly — Linux
+  measured, macOS expected, Windows provisional.
+- Install: clone this repository, `cd` into it, run `./install.sh` (do not
+  print a repository URL — the reader is already reading the repository).
+  Update: `git pull && ./install.sh`. Uninstall: remove the links/copies.
+  Document exit codes 0 (success or all-no-op), 1 (conflict — nothing
+  installed), 2 (verification failure), 64 (bad flag); `--no-probe`; that the
+  installer never prompts and never touches files it does not own.
 - The five skills, one line each, from the frontmatter descriptions.
 - The disclosure note: your machine's global AGENTS.md and codex skills still
   apply to every dispatch; the pack records them in MACHINE.md and reminds you
@@ -332,10 +321,148 @@ content:
   ledgers `<doc-basename>.review.md`.
 - No badges, no marketing, no roadmap section.
 
-**Verify:**
-- `grep -n "no-probe" README.md`, `grep -n "AGENTS.md" README.md`,
-  `grep -n "provisional" README.md` — all present;
-  `! grep -rn "/home/\|@gmail\|hostname" README.md`.
+**Verify (all must pass):**
+```bash
+test -f README.md
+grep -q 'no-probe' README.md
+grep -q 'AGENTS.md' README.md
+grep -qi 'provisional' README.md
+grep -q 'git pull && ./install.sh' README.md
+! grep -Ern '/home/|@gmail|github.com/' README.md
+```
+
+**STOP rule:** as in Global Constraints.
+
+---
+
+## Task 6: `install.sh`, `.gitignore`, `LICENSE`
+
+**Files:**
+- Create: `install.sh` (mode 755)
+- Create: `.gitignore`
+- Create: `LICENSE`
+
+**Interfaces:**
+- Consumes: all five skill directories (Tasks 1–4) — verify all five sources
+  exist before starting; if any is missing, STOP. Also consumes the MACHINE.md format
+  (Global Constraints).
+- Produces: the status-line format, exit codes, and flags that Task 5's README
+  documents — implement exactly what the README contract states.
+
+**Contracts:**
+- `.gitignore` content, exactly one line: `MACHINE.md`.
+- `LICENSE`: the MIT license text below, verbatim:
+
+  ```text
+  MIT License
+
+  Copyright (c) 2026 luna-loop contributors
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+  ```
+
+- `install.sh` behavior, in order:
+  1. **Resolve roots** from `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` and
+     `${CODEX_HOME:-$HOME/.codex}`; resolve the repo root from the script's
+     own location (`cd "$(dirname "$0")" && pwd`), never from the caller's
+     cwd. Flags: `--no-probe` only; any other flag → usage line, exit 64.
+     Test seam: env `LUNA_LOOP_FORCE_COPY=1` skips link mechanisms and goes
+     straight to copy (documented only here, not in README).
+  2. **Pre-flight all five targets.** A target is pack-owned iff it is a
+     symlink/junction resolving into this clone, or listed `owned: yes` in an
+     existing `MACHINE.md` with `mode: copy`. Any target that exists and is
+     not pack-owned → print one line per conflict, format:
+     `conflict <target> -> <dest> (existing: <file|dir|symlink -> resolved>)`,
+     install **nothing**, leave any existing `MACHINE.md` untouched, exit
+     **1**.
+  3. **Install each target**, first mechanism that works: `ln -s` →
+     (directories only, when `uname -s` matches `MINGW*|MSYS*`)
+     `cmd //c mklink /J "$(cygpath -w "$dest")" "$(cygpath -w "$src")"` →
+     `cp -R`. Validate by reading `SKILL.md` through the
+     installed path. A failed attempt is removed before the next mechanism. If all
+     mechanisms fail for a target: status `failed <target> -> <dest> (all
+     mechanisms failed)`, record `mode: failed`, continue remaining targets,
+     and exit **2** at the end.
+  4. **Verify:** `codex_path` via `command -v codex` (else `missing`);
+     `codex --version` (else `missing`; warn below 0.144); `claude --version`
+     if present (else `unknown`); login from `$CODEX_HOME/auth.json`
+     existence; **dry probe** unless `--no-probe`:
+     `codex exec --sandbox read-only --strict-config --skip-git-repo-check
+     -c model_reasoning_effort=low -c 'web_search="disabled"'
+     -c approval_policy="never" "Reply OK" </dev/null` — nonzero exit or empty
+     output → `probe: failed` and final exit **2** (after MACHINE.md and the
+     report; never silently certified); **read-scope probe** unless
+     `--no-probe`, exactly:
+     ```bash
+     token="LUNA-LOOP-PROBE-$$"
+     f="$HOME/.luna-loop-probe.$$.txt"
+     printf '%s\n' "$token" > "$f"
+     out=$(codex exec --sandbox read-only --strict-config \
+       --skip-git-repo-check -c model_reasoning_effort=low \
+       -c 'web_search="disabled"' -c approval_policy="never" \
+       "Read the file at $f and reply with exactly its contents. If you cannot read it, reply exactly CANNOT-READ." \
+       </dev/null 2>/dev/null) || out=""
+     rm -f "$f"
+     case "$out" in
+       *"$token"*)     read_scope=unrestricted ;;
+       *CANNOT-READ*)  read_scope=confined ;;
+       *)              read_scope=unprobed ;;   # never guess from ambiguity
+     esac
+     ```
+     **ambient context**: `$CODEX_HOME/AGENTS.md` present/absent; names under
+     `$HOME/.agents/skills/` if any.
+  5. **Write `MACHINE.md`** in the exact Global Constraints format, all five
+     target rows.
+  6. **Report:** one status line per target — `linked|copied|no-op|failed
+     <target> -> <dest>` (conflicts already reported and exited in step 2); if
+     any target is `copied`, print `NOTE: copy-mode targets refresh only on
+     rerun — update with: git pull && ./install.sh`; always end with
+     `Reminder: your system's global AGENTS.md still applies to this loop's
+     codex dispatches.`
+  - Exit codes: **0** success or all-no-op; **1** preflight conflict (nothing
+    installed); **2** install or verification failure; **64** bad flag.
+
+**Verify (all must pass; expectations are for this Linux machine):**
+```bash
+bash -n install.sh
+test -x install.sh
+test -f .gitignore && [ "$(cat .gitignore)" = "MACHINE.md" ]
+test -f LICENSE && grep -q 'MIT License' LICENSE
+
+CD=$(mktemp -d); CH=$(mktemp -d)
+CLAUDE_CONFIG_DIR=$CD CODEX_HOME=$CH ./install.sh --no-probe
+# expect: exit 0; five 'linked' lines; MACHINE.md exists; reminder line printed
+CLAUDE_CONFIG_DIR=$CD CODEX_HOME=$CH ./install.sh --no-probe
+# expect: exit 0; five 'no-op' lines (same roots, second run)
+
+CD2=$(mktemp -d); CH2=$(mktemp -d); mkdir -p "$CD2/skills/codex"
+CLAUDE_CONFIG_DIR=$CD2 CODEX_HOME=$CH2 ./install.sh --no-probe
+# expect: exit 1; one 'conflict' line naming skills/codex; nothing installed
+#         (test ! -e "$CD2/skills/loop-spec")
+
+CD3=$(mktemp -d); CH3=$(mktemp -d)
+LUNA_LOOP_FORCE_COPY=1 CLAUDE_CONFIG_DIR=$CD3 CODEX_HOME=$CH3 ./install.sh --no-probe
+# expect: exit 0; five 'copied' lines; the copy-mode NOTE line printed
+
+./install.sh --bogus-flag; # expect: exit 64, usage line
+! grep -rn '/home/' install.sh .gitignore LICENSE
+```
 
 **STOP rule:** as in Global Constraints.
 
@@ -343,9 +470,21 @@ content:
 
 ## Driver verification (after all tasks; not a dispatch)
 
-The driver — not the executor — runs the gated spec's acceptance table, Linux
-column: R1 fresh-install against temp roots, R2 idempotent rerun, R3 seeded
-conflict, R5 probe behavior (real probe once, with network), R6 output lines,
-R8 canary (`web_search="disabled"` dispatch reports no web tool), R10 repo scan
-for personal data. R4 (fallback chain) and R9 (Windows) wait for the
-peer-round machine. Results go in the loop, not in the repo.
+The driver — not the executor — runs the gated spec's acceptance table on this
+machine:
+- R1 fresh install against real roots (the five targets land, session lists the
+  skills), R2 idempotent rerun, R3 seeded conflict, R6 output lines — largely
+  re-runs of Task 6's verify against the real `$HOME` roots.
+- R4 fallback chain on Linux via `LUNA_LOOP_FORCE_COPY=1` (junction branch
+  stays Windows-only, measured at the peer round).
+- R5 both ways: one real probe with network (expect `probe: ok`), one with
+  `CODEX_HOME` pointed at an empty temp dir (expect loud `probe: failed`,
+  exit 2).
+- R8 canary: one implementation-shaped dispatch reports no web tool.
+- R10 repo scan for personal data.
+- **R7 is deferred, loudly:** the ledger round-trip through the *implemented*
+  `loop-review` skill is verified by the first real document gate run after
+  installation — a synthetic test would re-test this plan's own review
+  process, which already round-tripped three times. Recorded here so the
+  deferral is a decision, not an omission.
+- R9 (Windows) waits for the peer-round machine, per the spec.

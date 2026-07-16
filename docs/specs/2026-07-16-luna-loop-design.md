@@ -52,7 +52,9 @@ outside this boundary get cut, not folded.*
 - No Claude-subagent execution skills (the executor is codex), and no codex-side
   skills (executor-facing content travels in prompts).
 - Does not manage private standing instructions (personal CLAUDE.md), the user's
-  codex configuration, or their AGENTS.md.
+  codex configuration, or their AGENTS.md. The pack installs only into
+  `$CLAUDE_CONFIG_DIR/skills/` and never writes into `$CODEX_HOME`; model and
+  pricing tier are the machine owner's base-config choices, never the pack's.
 - Does not automate convergence: deciding a review series is done is a human call.
 
 ---
@@ -101,7 +103,7 @@ nobody can say why.
   everywhere. Skills are the shared memory; local memory is the lab bench.
 - **The update path is always `git pull && ./install.sh`.** The installer is
   idempotent, non-interactive, and quiet — one status line per target. Link-installed
-  targets (skills and profile alike) update through the pull alone; copy-fallback
+  targets update through the pull alone; copy-fallback
   targets are refreshed by the rerun. Installed copies are **never hand-edited** —
   the repo is the single source of truth; edit the repo and reinstall.
 - **`MACHINE.md` (gitignored) holds what must not sync:** OS, binary paths and
@@ -137,8 +139,6 @@ luna-loop/
 │   ├── loop-plan/SKILL.md
 │   ├── loop-review/SKILL.md
 │   └── codex/SKILL.md
-├── codex/
-│   └── sol-high-fast.config.toml    reviewer/executor profile (no secrets)
 └── docs/
     ├── specs/               the pack's own specs (this file) + review ledgers
     ├── plans/               the pack's own plans
@@ -324,27 +324,35 @@ Only what is load-bearing for *calling* codex:
   implementation of an agreed plan → `--sandbox workspace-write`. The sandbox flag
   is the only filesystem/process containment. Never
   `--dangerously-bypass-approvals-and-sandbox`.
-- **Web capability:** read-only dispatches keep the profile's live web search;
-  **implementation dispatches add `-c 'web_search="disabled"'`** (verified: the
+- **Web capability:** read-only dispatches pin `-c 'web_search="live"'`;
+  **implementation dispatches pin `-c 'web_search="disabled"'`** (verified: the
   config enum is `disabled|cached|indexed|live`; a disabled session reports no web
   tool). No untrusted web content in a process that writes files.
+- **No profile — everything semantic rides the command line.** The loop pins what
+  defines its behavior (sandbox, effort, web, approvals) explicitly on every call;
+  what it deliberately does **not** pin — model, pricing tier — inherits the
+  machine's own base config, because those are the owner's cost choices, not the
+  pack's. Measured: `-c` overrides beat base-config defaults (a base defaulting to
+  max ran at the pinned effort), and headless `exec` runs without any approval
+  knob — the shapes pin `approval_policy="never"` anyway so behavior never depends
+  on a machine's defaults.
 - **The three call shapes** (all flags mandatory, every call):
-  1. *Document review (max):* `codex exec --sandbox read-only --profile <name>
-     --strict-config --skip-git-repo-check -c model_reasoning_effort=max
+  1. *Document review:* `codex exec --sandbox read-only --strict-config
+     --skip-git-repo-check -c model_reasoning_effort=max -c 'web_search="live"'
+     -c approval_policy="never" "$(cat promptfile)" </dev/null`
+  2. *Opinion / exploration:* same shape with `-c model_reasoning_effort=high`.
+  3. *Implementation:* `codex exec --sandbox workspace-write --strict-config
+     --skip-git-repo-check -c model_reasoning_effort=high
+     -c 'web_search="disabled"' -c approval_policy="never"
      "$(cat promptfile)" </dev/null`
-  2. *Opinion / exploration (profile default):* same shape without the effort
-     override.
-  3. *Implementation:* `codex exec --sandbox workspace-write --profile <name>
-     --strict-config --skip-git-repo-check -c 'web_search="disabled"'
-     "$(cat promptfile)" </dev/null`
-- **Why each flag:** `--profile` because a base config may carry an expensive
-  default effort (the origin machine's defaulted to max — silent money);
+- **Why each flag:** explicit effort because a base config may carry an expensive
+  default (the origin machine's defaulted to max — silent money);
   `--strict-config` so a typo'd override fails loudly instead of silently running
   wrong; `--skip-git-repo-check` to run outside git repos; `</dev/null` because
   codex waits on non-tty stdin and hangs without it. Long prompts (measured
   threshold ≈6k chars on the origin machine) must be file-backed via `"$(cat
   promptfile)"` — inline they truncate with phantom quoting errors.
-- **Effort table:** max = document gates and tiebreaks; high (profile default) =
+- **Effort table:** max = document gates and tiebreaks; high =
   everything the driver re-verifies. Never pay max for work a test suite re-reviews
   for free.
 - **Never resume a session** (`codex exec resume` is never used). Cold start is a
@@ -372,9 +380,9 @@ Only what is load-bearing for *calling* codex:
 Windows: Git Bash, a declared prerequisite). Honors `CLAUDE_CONFIG_DIR` (default
 `~/.claude`) and `CODEX_HOME` (default `~/.codex`).
 
-**Ownership and conflicts.** The installer manages **six targets** under one rule:
-the five skill directories → `$CLAUDE_CONFIG_DIR/skills/<name>`, and the profile
-file `codex/sol-high-fast.config.toml` → `$CODEX_HOME/sol-high-fast.config.toml`.
+**Ownership and conflicts.** The installer manages **five targets** under one
+rule: the five skill directories → `$CLAUDE_CONFIG_DIR/skills/<name>`. It never
+writes into `$CODEX_HOME` — codex configuration is entirely the machine owner's.
 A target is pack-owned iff it is a symlink/junction resolving into this clone, or
 recorded as a pack-installed copy in `MACHINE.md`. Pack-owned targets refresh
 silently on every rerun. Anything else at a target path is a **conflict, and
@@ -386,31 +394,30 @@ or deletes files it does not own, and it **never prompts — there is no interac
 path**. Installed copies are never hand-edited; the repo is the source of truth.
 
 Steps:
-1. **Pre-flight.** Check all six targets; on any conflict, report and exit 1
+1. **Pre-flight.** Check all five targets; on any conflict, report and exit 1
    before touching anything.
 2. **Install.** Per target, first mechanism that works, in order: **symlink →
    NTFS junction (directories only: `cmd //c mklink /J`, paths via `cygpath -w`,
-   no admin) → plain copy.** Validate after creating — read the real content
-   through the installed path (`SKILL.md` for skills, the TOML for the profile);
-   on failure, remove the broken attempt before trying the next mechanism. Record
-   the mode per target in `MACHINE.md`. A linked profile means editing
-   `$CODEX_HOME/<profile>` edits the clone's working tree — local tweaks show up
-   in `git status` instead of drifting invisibly.
+   no admin) → plain copy.** Validate after creating — read `SKILL.md` through
+   the installed path; on failure, remove the broken attempt before trying the
+   next mechanism. Record the mode per target in `MACHINE.md`.
 3. **Verify and record** in `MACHINE.md` (gitignored, repo root): OS; codex binary,
-   version (floor: ≥0.144, the version whose per-profile files and flag behavior
-   were measured), login state; Claude Code version (symlinked-skill support floor:
-   unverified — see Pending Measurements); **profile dry probe** — the mandatory
-   flag set with a trivial prompt, at profile-default effort (deliberately *not*
-   max: this is a connectivity and profile-resolution check, not a review):
-   `codex exec --sandbox read-only --profile sol-high-fast --strict-config
-   --skip-git-repo-check "Reply OK" </dev/null` (skippable with `--no-probe`; a
-   probe failure is reported, never silently certified — and a passing probe also
-   proves codex resolves the profile through the installed target); **sandbox read-scope
+   version (floor: ≥0.144, the version whose flag behavior
+   was measured), login state; Claude Code version (symlinked-skill support floor:
+   unverified — see Pending Measurements); **dry probe** — the mandatory
+   flag set with a trivial prompt at pinned low effort (deliberately *not*
+   max: this is a connectivity check, not a review):
+   `codex exec --sandbox read-only --strict-config
+   --skip-git-repo-check -c model_reasoning_effort=low -c 'web_search="disabled"'
+   -c approval_policy="never" "Reply OK" </dev/null` (full override set per the
+   explicit-on-every-call rule; web disabled — a probe needs no web)
+   (skippable with `--no-probe`; a
+   probe failure is reported, never silently certified); **sandbox read-scope
    probe** — a read-only dispatch asked to read a file outside the worktree, result
    recorded for `loop-review`; **ambient context** — global
    `$CODEX_HOME/AGENTS.md` present? `~/.agents/skills/` contents?
 4. **Report.** One status line per target — linked / copied / no-op / conflict —
-   so a second run printing six no-ops *is* the idempotency proof; if any target
+   so a second run printing five no-ops *is* the idempotency proof; if any target
    was copy-installed, state that updates require rerunning `install.sh` after
    `git pull`; always end with: *"Reminder: your system's global AGENTS.md still
    applies to this loop's codex dispatches."*
@@ -423,11 +430,11 @@ No uninstall script: remove the links/copies, done.
 
 | # | Requirement | Acceptance check |
 |---|---|---|
-| R1 | Fresh Linux install: five skills resolve, profile installed, `MACHINE.md` written | run `install.sh` on a clean `$CLAUDE_CONFIG_DIR`; new Claude session lists all five skills |
+| R1 | Fresh Linux install: five skills resolve, `MACHINE.md` written | run `install.sh` on a clean `$CLAUDE_CONFIG_DIR`; new Claude session lists all five skills |
 | R2 | Idempotent rerun: second run changes nothing, prompts nothing | run twice; second run prints one no-op line per target, exits 0 |
 | R3 | Conflicts fail clean: foreign target → nothing installed, conflict named, exit non-zero | seed a fake `$CLAUDE_CONFIG_DIR/skills/codex`; install touches nothing, names the path, exits 1; remove it → rerun installs |
 | R4 | Fallback chain validates and cleans up | force symlink failure; junction/copy used; sentinel readable through installed path; no broken link left |
-| R5 | Dry probe uses the mandatory flag set at profile-default effort, cannot hang, failure is loud | probe command contains `</dev/null` and all mandatory flags, no max override; disconnect network → install reports probe failure |
+| R5 | Dry probe uses the mandatory flag set at pinned low effort, cannot hang, failure is loud | probe command contains `</dev/null` and all mandatory flags; disconnect network → install reports probe failure |
 | R6 | Post-install output includes AGENTS.md reminder and copy-mode warning when applicable | inspect output in both modes |
 | R7 | Review ledger round-trips across cold sessions | a verification round dispatched from a fresh session using the ledger, the git baseline, and the standard reading-order inputs — no conversational context |
 | R8 | Implementation shape is web-dark and workspace-confined | dispatch echoes `web_search="disabled"`, banner shows `workspace-write`; canary run reports no web tool |
@@ -463,21 +470,24 @@ No uninstall script: remove the links/copies, done.
   must not steer a process with write access; reviews keep live web because
   doc-grounded findings are worth it and the sandbox confines reads. Key and effect
   measured. Ruled by the owner.
-- **Update path = `git pull && ./install.sh`, always** — one habit covers symlink
-  refresh, copy refresh, and profile refresh; the installer being idempotent makes
-  the habit free.
+- **Update path = `git pull && ./install.sh`, always** — one habit covers link
+  refresh and copy refresh; the installer being idempotent makes the habit free.
 - **Conflicts fail clean; the installer never touches files it does not own** — a
   foreign same-name target aborts the whole install with an explanation, and
   migration is the user's manual act. Moving or backing up a user's in-use skill to
   take its name is a behavior change they never asked for. (Ruled by the owner;
   supersedes an interim backup-and-adopt design.)
-- **The profile is a target like any other — linked, same chain, same conflict
-  rule** — the copy special-case protected an impossible scenario (clone gone but
-  pack still alive: no clone means no skills means no profile consumer) and it was
-  the sole source of the drift findings (F19, N2) plus the provenance-hash
-  machinery invented to compensate. A linked profile also makes `git status` the
-  drift detector: local tweaks are visible diffs, committed or reverted, never
-  silent. (Owner's gut caught the asymmetry; analysis confirmed it.)
+- **No shipped codex profile — semantics on the command line, preferences in the
+  user's base config** (owner-initiated reversal of the earlier six-target
+  decision, same day, recorded in the ledger). The profile pinned two different
+  kinds of settings: loop semantics (effort, web, approvals) — now explicit on
+  every call shape — and personal cost preferences (model, pricing tier), which a
+  public pack must not impose and which now correctly inherit each machine's own
+  base config. Dropping it means the pack never writes into `$CODEX_HOME` at all,
+  the installer shrinks to five targets of one kind, and the entire
+  profile-divergence problem class (three review findings and one design debate)
+  ceases to exist. Measured before ruling: `-c` overrides beat base-config
+  defaults; headless `exec` needs no approval knob (shapes pin it anyway).
 - **One install script (bash), fallback chain symlink → junction → copy** — bash is
   the single interpreter guaranteed on every supported platform (Git Bash is a
   declared prerequisite on Windows); the chain degrades gracefully where symlinks
@@ -517,4 +527,6 @@ Measured on the origin machine (2026-07-15/16), recorded for transparency: codex
 0.144.4; `web_search` enum `disabled|cached|indexed|live` and `disabled` verified
 web-dark; `project_doc_max_bytes=0` does not suppress the global AGENTS.md; no
 per-invocation global-AGENTS.md switch exists; read-only sandbox reads outside the
-worktree on this platform.
+worktree on this platform; profile-less calls with explicit `-c` overrides beat
+base-config defaults (a base defaulting to effort max ran at the pinned level);
+headless `exec` completes without any approval setting.
