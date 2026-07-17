@@ -1,0 +1,4 @@
+interface:
+  display_name: "Loop Execute"
+  short_description: "Implement a gated plan directly and verify it"
+  default_prompt: "Use $loop-execute to implement the gated plan directly, verify it, and run the final Opus review."

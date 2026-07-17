@@ -1,0 +1,4 @@
+interface:
+  display_name: "Loop Interview"
+  short_description: "Shape ideas into evidence-backed decisions"
+  default_prompt: "Use $loop-interview to turn this idea into settled, evidence-backed decisions."

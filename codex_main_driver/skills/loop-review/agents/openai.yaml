@@ -1,0 +1,4 @@
+interface:
+  display_name: "Loop Review"
+  short_description: "Gate documents and code with independent Opus"
+  default_prompt: "Use $loop-review to run the independent Opus gate and triage its findings."
