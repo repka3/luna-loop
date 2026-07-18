@@ -165,14 +165,11 @@ make_post_failing_rmdir() {
 
 printf 'fixtures are retained under /tmp/luna-loop-test.* for inspection\n'
 
-# The compatibility entry point must never guess a mode.
+# An empty installation has no active driver.
 new_fixture
 run_installer "$REPO_ROOT/who_is_driving.sh"
 assert_status "empty installation has a determinate status" 0
 assert_output "empty installation reports nobody" "Nobody is driving."
-run_installer "$REPO_ROOT/install.sh"
-assert_status "ambiguous installer refuses to mutate" 64
-assert_false "ambiguous installer creates no skills" test -e "$CASE_CLAUDE/skills"
 
 # Round trip, idempotence, exact receipts, unrelated-skill preservation, and
 # proof that the installer checks tool presence without executing either tool.
@@ -354,7 +351,6 @@ assert_status "missing model CLI is an environment failure" 2
 
 # The installer source itself must contain no recursive deletion mechanism.
 if rg -n 'rm[[:space:]]+-[^[:space:]]*[rR]|find.*-delete' \
-    "$REPO_ROOT/install.sh" \
     "$REPO_ROOT/install_claude_main.sh" \
     "$REPO_ROOT/install_codex_main.sh" \
     "$REPO_ROOT/installer/install_driver.sh" > "$LAST_OUTPUT" 2>&1; then

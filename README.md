@@ -35,7 +35,7 @@ or:
 ./install_claude_main.sh
 ```
 
-Running the other script later switches direction. Updating is `git pull` followed by the same explicit installer. The old `./install.sh` is deliberately non-mutating and exits with usage status 64 because guessing the intended driver would be unsafe.
+Running the other script later switches direction. Updating is `git pull` followed by the same explicit installer.
 
 Check the current mode without changing anything:
 
