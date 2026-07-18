@@ -37,6 +37,14 @@ or:
 
 Running the other script later switches direction. Updating is `git pull` followed by the same explicit installer. The old `./install.sh` is deliberately non-mutating and exits with usage status 64 because guessing the intended driver would be unsafe.
 
+Check the current mode without changing anything:
+
+```bash
+./who_is_driving.sh
+```
+
+It reports `Claude is driving.`, `Codex is driving.`, or `Nobody is driving.` A partial, mixed, foreign, or simultaneously active state is reported as inconsistent instead of being guessed.
+
 The installed skills are plain copies, never symlinks:
 
 - Claude skills go to `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills`.

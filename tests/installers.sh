@@ -49,6 +49,17 @@ assert_status() {
   fi
 }
 
+assert_output() {
+  assertion_name="$1"
+  expected_output="$2"
+  actual_output="$(cat "$LAST_OUTPUT")"
+  if [ "$actual_output" = "$expected_output" ]; then
+    pass "$assertion_name"
+  else
+    fail "$assertion_name (expected '$expected_output', got '$actual_output')"
+  fi
+}
+
 new_fixture() {
   FIXTURE_ROOT="$(mktemp -d /tmp/luna-loop-test.XXXXXX)" || exit 1
   CASE_HOME="$FIXTURE_ROOT/home"
@@ -156,6 +167,9 @@ printf 'fixtures are retained under /tmp/luna-loop-test.* for inspection\n'
 
 # The compatibility entry point must never guess a mode.
 new_fixture
+run_installer "$REPO_ROOT/who_is_driving.sh"
+assert_status "empty installation has a determinate status" 0
+assert_output "empty installation reports nobody" "Nobody is driving."
 run_installer "$REPO_ROOT/install.sh"
 assert_status "ambiguous installer refuses to mutate" 64
 assert_false "ambiguous installer creates no skills" test -e "$CASE_CLAUDE/skills"
@@ -171,6 +185,9 @@ run_installer_with_path "$REPO_ROOT/install_claude_main.sh" "$test_path"
 assert_status "Claude-main fresh install" 0
 assert_true "Claude-main receipts" assert_mode_receipts \
   "$CASE_CLAUDE/skills" claude-main claude-v1 $CLAUDE_TARGETS
+run_installer_with_path "$REPO_ROOT/who_is_driving.sh" "$test_path"
+assert_status "Claude-main status is valid" 0
+assert_output "status reports Claude-main" "Claude is driving."
 assert_false "install does not execute either model CLI" test -e "$FIXTURE_ROOT/tool-calls"
 run_installer_with_path "$REPO_ROOT/install_claude_main.sh" "$test_path"
 assert_status "Claude-main reinstall is idempotent" 0
@@ -178,6 +195,9 @@ run_installer_with_path "$REPO_ROOT/install_codex_main.sh" "$test_path"
 assert_status "switch Claude-main to Codex-main" 0
 assert_true "Codex-main receipts" assert_mode_receipts \
   "$CASE_HOME/.agents/skills" codex-main codex-v1 $CODEX_TARGETS
+run_installer_with_path "$REPO_ROOT/who_is_driving.sh" "$test_path"
+assert_status "Codex-main status is valid" 0
+assert_output "status reports Codex-main" "Codex is driving."
 assert_false "installed Codex skill is not a symlink" \
   test -L "$CASE_HOME/.agents/skills/loop-spec"
 assert_true "installed Codex skill is a byte-for-byte copy" cmp -s \
@@ -201,6 +221,9 @@ for legacy_skill in $CLAUDE_TARGETS; do
     "$CASE_CLAUDE/skills/$legacy_skill/SKILL.md" || exit 1
   : > "$CASE_CLAUDE/skills/$legacy_skill/.luna-loop"
 done
+run_installer "$REPO_ROOT/who_is_driving.sh"
+assert_status "legacy Claude status is valid" 0
+assert_output "legacy pack reports Claude-main" "Claude is driving."
 run_installer "$REPO_ROOT/install_codex_main.sh"
 assert_status "legacy Claude pack switches to Codex-main" 0
 assert_false "legacy Claude pack removed exactly" test -e "$CASE_CLAUDE/skills/codex"
@@ -223,6 +246,8 @@ assert_true "foreign empty marker remains untouched" \
 new_fixture
 mkdir -p "$CASE_CLAUDE/skills/loop-plan" || exit 1
 printf 'owner content\n' > "$CASE_CLAUDE/skills/loop-plan/KEEP" || exit 1
+run_installer "$REPO_ROOT/who_is_driving.sh"
+assert_status "foreign managed name makes status inconsistent" 1
 run_installer "$REPO_ROOT/install_codex_main.sh"
 assert_status "foreign target is a conflict" 1
 assert_true "foreign target is untouched" test -f "$CASE_CLAUDE/skills/loop-plan/KEEP"
@@ -303,6 +328,8 @@ assert_true "new Codex-main mode remains complete" assert_mode_receipts \
   "$CASE_HOME/.agents/skills" codex-main codex-v1 $CODEX_TARGETS
 assert_true "old Claude pack is restored after cleanup failure" assert_mode_receipts \
   "$CASE_CLAUDE/skills" claude-main claude-v1 $CLAUDE_TARGETS
+run_installer "$REPO_ROOT/who_is_driving.sh"
+assert_status "simultaneously active packs are inconsistent" 1
 
 # A cleanup command that reports failure after completing its exact operation
 # must still produce exit 3; function-local state must not erase that receipt.
@@ -320,6 +347,8 @@ assert_true "selected mode is complete after reported cleanup failure" \
 new_fixture
 run_installer "$REPO_ROOT/install_codex_main.sh" unexpected
 assert_status "public installer rejects arguments" 64
+run_installer "$REPO_ROOT/who_is_driving.sh" unexpected
+assert_status "status script rejects arguments" 64
 run_installer_with_path "$REPO_ROOT/install_codex_main.sh" "/usr/bin:/bin"
 assert_status "missing model CLI is an environment failure" 2
 
