@@ -1,11 +1,22 @@
 ---
 name: loop-interview
-description: "Shape an idea into evidence-backed decisions before specification. Use for brainstorming, scoping, requirements discovery, roadmap discussion, or any request that is still too ambiguous to specify or build."
+description: "Explicit phase-entry workflow for shaping a new or deliberately reopened idea into evidence-backed decisions before specification. Use only when the user explicitly invokes $loop-interview to start, resume, or reopen structured discovery. Do not trigger implicitly for routine follow-up questions, clarifications, decisions, status checks, objections, or continued work when an active discovery artifact already carries the phase."
 ---
 
 # Loop Interview
 
 Turn an idea into either a spec-ready decision set or a deliberately loose note. Keep the conversation useful to the human, not exhaustive for its own sake.
+
+## Entry gate
+
+- Run only on explicit `$loop-interview` invocation.
+- Treat an existing discovery note or settled boundary as active state. Read it
+  and continue from its open edge instead of restarting the interview.
+- A new independent scope may receive its own discovery artifact. Routine
+  continuation of the current scope may not.
+- After entry, persist durable decisions in repository artifacts. Ordinary
+  follow-up turns rely on those artifacts and the repository working agreement,
+  not repeated skill injection.
 
 ## Start with scope
 
