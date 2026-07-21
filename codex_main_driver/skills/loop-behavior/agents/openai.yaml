@@ -1,0 +1,7 @@
+interface:
+  display_name: "Loop Behavior"
+  short_description: "Define exact observable behavior"
+  default_prompt: "Use $loop-behavior to write the smallest exact behavior definition needed for this work."
+
+policy:
+  allow_implicit_invocation: false

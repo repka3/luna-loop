@@ -1,149 +1,117 @@
 #!/usr/bin/env bash
-# Read-only luna-loop mode detector.
+# Best-effort, read-only inspection of installed luna-loop packs.
 set -u
 
 MARKER=".luna-loop"
-RECEIPT_HEADER="luna-loop-receipt-v2"
-COMMON_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute"
-CLAUDE_TARGETS="$COMMON_TARGETS codex"
-CODEX_TARGETS="$COMMON_TARGETS opus"
-ALL_TARGETS="$COMMON_TARGETS codex opus"
+CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
+CODEX_TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
+LEGACY_CODEX_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute opus"
+CODEX_MANAGED_TARGETS="loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute opus"
 
 if [ "$#" -ne 0 ]; then
-  echo "usage: ./who_is_driving.sh"
+  echo "usage: ./who_is_driving.sh" >&2
   exit 64
 fi
 
-path_exists() {
-  [ -e "$1" ] || [ -L "$1" ]
-}
-
-plain_dir() {
-  [ -d "$1" ] && [ ! -L "$1" ]
-}
-
-plain_file() {
-  [ -f "$1" ] && [ ! -L "$1" ]
-}
+path_exists() { [ -e "$1" ] || [ -L "$1" ]; }
+plain_dir() { [ -d "$1" ] && [ ! -L "$1" ]; }
+plain_file() { [ -f "$1" ] && [ ! -L "$1" ]; }
 
 entry_count() {
-  local count_dir="$1"
-  local count_value=0
-  local count_entry
-  for count_entry in "$count_dir"/* "$count_dir"/.[!.]* "$count_dir"/..?*; do
-    if path_exists "$count_entry"; then
-      count_value=$((count_value + 1))
-    fi
+  local dir="$1" count=0 entry
+  for entry in "$dir"/* "$dir"/.[!.]* "$dir"/..?*; do
+    path_exists "$entry" && count=$((count + 1))
   done
-  printf '%s\n' "$count_value"
+  printf '%s\n' "$count"
 }
 
 receipt_text() {
-  printf '%s\nmode=%s\nskill=%s\nlayout=%s\n' \
-    "$RECEIPT_HEADER" "$1" "$2" "$3"
+  local mode="$1" skill="$2" layout="$3"
+  printf 'luna-loop-receipt-v2\nmode=%s\nskill=%s\nlayout=%s\n' "$mode" "$skill" "$layout"
 }
 
-marker_is_current() {
-  local target_dir="$1"
-  local mode="$2"
-  local skill="$3"
-  local layout="$4"
-  plain_file "$target_dir/$MARKER" || return 1
-  [ "$(cat "$target_dir/$MARKER" 2>/dev/null)" = \
-    "$(receipt_text "$mode" "$skill" "$layout")" ]
+claude_target_valid() {
+  local dir="$1" skill="$2"
+  plain_dir "$dir" || return 1
+  [ "$(entry_count "$dir")" = 2 ] || return 1
+  plain_file "$dir/SKILL.md" || return 1
+  plain_file "$dir/$MARKER" || return 1
+  [ ! -s "$dir/$MARKER" ] ||
+    [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text claude-main "$skill" claude-v1)" ]
 }
 
-claude_target_is_valid() {
-  local target_dir="$1"
-  local skill="$2"
-  plain_dir "$target_dir" || return 1
-  [ "$(entry_count "$target_dir")" = "2" ] || return 1
-  plain_file "$target_dir/SKILL.md" || return 1
-  plain_file "$target_dir/$MARKER" || return 1
-  marker_is_current "$target_dir" claude-main "$skill" claude-v1 \
-    || [ ! -s "$target_dir/$MARKER" ]
+codex_target_valid() {
+  local dir="$1" skill="$2"
+  plain_dir "$dir" || return 1
+  [ "$(entry_count "$dir")" = 3 ] || return 1
+  plain_file "$dir/SKILL.md" || return 1
+  plain_file "$dir/$MARKER" || return 1
+  plain_dir "$dir/agents" || return 1
+  [ "$(entry_count "$dir/agents")" = 1 ] || return 1
+  plain_file "$dir/agents/openai.yaml" || return 1
+  [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text codex-main "$skill" codex-v1)" ]
 }
 
-codex_target_is_valid() {
-  local target_dir="$1"
-  local skill="$2"
-  plain_dir "$target_dir" || return 1
-  [ "$(entry_count "$target_dir")" = "3" ] || return 1
-  plain_file "$target_dir/SKILL.md" || return 1
-  plain_file "$target_dir/$MARKER" || return 1
-  plain_dir "$target_dir/agents" || return 1
-  [ "$(entry_count "$target_dir/agents")" = "1" ] || return 1
-  plain_file "$target_dir/agents/openai.yaml" || return 1
-  marker_is_current "$target_dir" codex-main "$skill" codex-v1
-}
-
-inspect_pack() {
-  local pack_kind="$1"
-  local skills_root="$2"
-  local expected_targets="$3"
-  local seen=0
-  local valid=0
-  local invalid=0
-  local skill target_path
-
-  if path_exists "$skills_root" && ! plain_dir "$skills_root"; then
+claude_state() {
+  local root="$1" seen=0 valid=0 skill target
+  if path_exists "$root" && ! plain_dir "$root"; then
     printf '%s\n' inconsistent
     return
   fi
-
-  for skill in $ALL_TARGETS; do
-    target_path="$skills_root/$skill"
-    if ! path_exists "$target_path"; then
-      continue
+  for skill in $CLAUDE_TARGETS; do
+    target="$root/$skill"
+    if path_exists "$target"; then
+      seen=$((seen + 1))
+      claude_target_valid "$target" "$skill" && valid=$((valid + 1))
     fi
-    seen=$((seen + 1))
-    case " $expected_targets " in
-      *" $skill "*)
-        if [ "$pack_kind" = claude ]; then
-          claude_target_is_valid "$target_path" "$skill" \
-            && valid=$((valid + 1)) || invalid=1
-        else
-          codex_target_is_valid "$target_path" "$skill" \
-            && valid=$((valid + 1)) || invalid=1
-        fi
-        ;;
-      *) invalid=1 ;;
-    esac
   done
-
   if [ "$seen" -eq 0 ]; then
     printf '%s\n' empty
-  elif [ "$invalid" -eq 0 ] && [ "$valid" -eq 6 ]; then
+  elif [ "$seen" -eq 6 ] && [ "$valid" -eq 6 ]; then
     printf '%s\n' complete
   else
     printf '%s\n' inconsistent
   fi
 }
 
-if [ -z "${HOME:-}" ]; then
-  echo "Unable to determine the driver: HOME is unset." >&2
-  exit 2
-fi
-case "$HOME" in
-  /*) ;;
-  *) echo "Unable to determine the driver: HOME must be absolute." >&2; exit 2 ;;
-esac
-plain_dir "$HOME" || {
-  echo "Unable to determine the driver: HOME is not an ordinary directory." >&2
-  exit 2
+codex_set_complete() {
+  local root="$1" targets="$2" skill
+  for skill in $targets; do
+    codex_target_valid "$root/$skill" "$skill" || return 1
+  done
 }
 
-CLAUDE_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-case "$CLAUDE_ROOT" in
+codex_state() {
+  local root="$1" seen=0 skill target
+  if path_exists "$root" && ! plain_dir "$root"; then
+    printf '%s\n' inconsistent
+    return
+  fi
+  for skill in $CODEX_MANAGED_TARGETS; do
+    target="$root/$skill"
+    path_exists "$target" && seen=$((seen + 1))
+  done
+  if [ "$seen" -eq 0 ]; then
+    printf '%s\n' empty
+  elif [ "$seen" -eq 6 ] && codex_set_complete "$root" "$CODEX_TARGETS"; then
+    printf '%s\n' complete
+  elif [ "$seen" -eq 6 ] && codex_set_complete "$root" "$LEGACY_CODEX_TARGETS"; then
+    printf '%s\n' legacy
+  else
+    printf '%s\n' inconsistent
+  fi
+}
+
+[ -n "${HOME:-}" ] || { echo "Unable to inspect luna-loop: HOME is unset." >&2; exit 2; }
+case "$HOME" in
   /*) ;;
-  *)
-    echo "Unable to determine the driver: CLAUDE_CONFIG_DIR must be absolute." >&2
-    exit 2
-    ;;
+  *) echo "Unable to inspect luna-loop: HOME must be absolute." >&2; exit 2 ;;
 esac
 
-CLAUDE_STATE="$(inspect_pack claude "$CLAUDE_ROOT/skills" "$CLAUDE_TARGETS")"
-CODEX_STATE="$(inspect_pack codex "$HOME/.agents/skills" "$CODEX_TARGETS")"
+CLAUDE_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
+CODEX_ROOT="$HOME/.agents/skills"
+CLAUDE_STATE="$(claude_state "$CLAUDE_ROOT")"
+CODEX_STATE="$(codex_state "$CODEX_ROOT")"
 
 if [ "$CLAUDE_STATE" = complete ] && [ "$CODEX_STATE" = empty ]; then
   echo "Claude is driving."
@@ -153,11 +121,19 @@ if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = complete ]; then
   echo "Codex is driving."
   exit 0
 fi
+if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = legacy ]; then
+  echo "Codex is driving with the retired skill names; reinstall is recommended."
+  exit 0
+fi
 if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = empty ]; then
   echo "Nobody is driving."
   exit 0
 fi
+if [ "$CLAUDE_STATE" = complete ] && { [ "$CODEX_STATE" = complete ] || [ "$CODEX_STATE" = legacy ]; }; then
+  echo "Both Claude and Codex packs are installed; the driver is ambiguous."
+  exit 1
+fi
 
-echo "Driving state is inconsistent."
+echo "Luna-loop installation is incomplete or modified."
 echo "Claude pack: $CLAUDE_STATE; Codex pack: $CODEX_STATE." >&2
 exit 1

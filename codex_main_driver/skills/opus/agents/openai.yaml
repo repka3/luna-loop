@@ -1,4 +1,7 @@
 interface:
   display_name: "Opus"
-  short_description: "Dispatch read-only web-enabled Opus reviews"
+  short_description: "Dispatch read-only Opus on demand"
   default_prompt: "Use $opus for an independent read-only review, research pass, or second opinion."
+
+policy:
+  allow_implicit_invocation: false

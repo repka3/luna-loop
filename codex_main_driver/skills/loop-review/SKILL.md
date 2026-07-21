@@ -1,43 +1,41 @@
 ---
 name: loop-review
-description: "Run independent Opus gates for specifications, plans, and completed implementations; compose neutral context-complete briefs, triage findings, maintain ledgers, and track convergence. Use when a loop artifact reaches a required review gate."
+description: "Run an optional independent Opus review of a ledger, behavior definition, plan, or implementation and triage its findings against primary evidence. Invoke only when the user explicitly requests $loop-review or deliberately selects an independent review."
 ---
 
 # Loop Review
 
-Use Opus as a read-only, web-enabled independent backstop. `$opus` owns call mechanics; this skill owns what to send, how to triage the result, and when the gate is settled.
+Use Opus as a read-only second set of eyes when the cost or uncertainty justifies it. Review is optional; it is not a universal gate and the reviewer does not decide convergence.
 
-## Compose a blind, complete brief
+`$opus` owns dispatch mechanics. This skill owns the brief, evidence, triage, and durable review record.
 
-- Withhold the conversation and out-of-band advocacy. Send the whole artifact, including recorded decisions and reasons.
-- Provide every artifact the subject cites, depends on, or inherits from, in reading order. Missing context makes a cold reviewer invent the system.
-- For external artifacts, place exact copies in the private session scratch directory and grant Opus read access only to that directory.
-- For implementation review, provide the gated spec and plan, the reviewed commit range or prepared diff, relevant source paths, and the driver's verified test results.
-- Ask Opus to walk failure timelines as the boundary human and state what that person sees and loses for every finding.
-- Ask for numbered findings with severity, evidence, and precise references. Do not ask the reviewer to approve the work or declare convergence.
+## Review the right failure mode
 
-## Keep a durable ledger
+- **Ledger** — missed decisions, contradictions, stale resume state, or conversation decisions not persisted.
+- **Behavior definition** — ambiguity, undefined normative language, conflicting rules, missing failure results, or acceptance gaps.
+- **Plan** — invented policy, incomplete affected surface, dependency errors, divergence from governing behavior, or verification that cannot catch failure.
+- **Implementation** — divergence from governing behavior or plan, regressions, unsupported assumptions, unsafe side effects, or missing verification.
 
-Document gates use `<document-basename>.review.md`. Final implementation review uses `<plan-basename>.implementation.review.md`.
+## Compose a neutral brief
 
-Record reviewer/model/effort/tool boundary, reviewed baseline, finding rows, dispositions, reversal count, and escalation outcomes. In non-git projects, state that no baseline exists and run full-artifact rounds.
+- Provide the complete subject and every artifact it depends on in reading order.
+- State the scope, authority hierarchy, trust boundary when relevant, reviewed baseline or diff, and verified test results.
+- Withhold conversational advocacy and the driver's preferred conclusion.
+- Ask for numbered findings with severity, evidence, precise references, user-visible cost, and the smallest supported correction.
+- Ask the reviewer to identify uncertainty rather than fill missing context with guesses.
 
-## Triage every finding
+## Triage against evidence
 
-First state the cost if the finding is real, then choose:
+For each finding choose:
 
-- **fold** — real and inside the written trust boundary; change the authority artifact or implementation.
-- **cut** — technically possible but outside the boundary; record the boundary-based reason.
-- **escalate** — a real user-visible trade-off or meaning change; bring both sides' evidence to the user.
+- **fold** — supported, in scope, and worth correcting;
+- **cut** — unsupported or outside the settled boundary, with the exact reason;
+- **escalate** — a real owner decision or meaning change.
 
-Do not defer a finding with vague language. Do not let either model silently win a disagreement.
+Verify material reviewer claims against primary evidence. Neither model wins by identity.
 
-## Run verification rounds
+## Record the result
 
-- Document fixes: send the reworked document, ledger, original reading-order inputs, and baseline; ask for diff-only verification without re-litigating cuts or settled decisions.
-- Implementation fixes: rerun focused and standard tests first, then send a fresh diff-only Opus verification when the accepted fixes materially changed code.
-- Report each round with finding count, severity split, reversal count, boundary-human cost, and recommended disposition.
-- A reversal stops the line. Bring both positions and evidence to the user.
-- The user decides convergence. The reviewer never declares itself done.
+Write a review record beside the subject as `<subject-basename>.review.md`; an implementation review may use `<plan-basename>.implementation.review.md`. Record the reviewer/model/effort, inputs and baseline, findings, evidence checks, dispositions, changes made, and residual uncertainty. Do not call this record a ledger.
 
-Invoke `$opus` at `xhigh`. Use `max` only when the user explicitly requests it.
+Further rounds are optional and proportionate. Re-run focused tests before reviewing material implementation fixes. Invoke `$opus` at `xhigh`; use `max` only when the user explicitly asks.

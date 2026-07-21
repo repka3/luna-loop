@@ -1,4 +1,0 @@
-interface:
-  display_name: "Loop Spec"
-  short_description: "Write an authoritative testable specification"
-  default_prompt: "Use $loop-spec to turn the settled decisions into a gate-ready specification."

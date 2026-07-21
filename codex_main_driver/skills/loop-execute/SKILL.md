@@ -1,43 +1,42 @@
 ---
 name: loop-execute
-description: "Implement a gated plan directly in the main Codex session, verify each task, preserve the spec authority, and run the required final Opus implementation gate. Invoke only after an explicit user go-word because it writes files and may create commits."
+description: "Implement authorized work directly in the context-rich Codex session and verify it proportionately. Invoke only after an explicit user go-word because $loop-execute writes files and may create commits; a plan is useful but not required."
 ---
 
 # Loop Execute
 
-Implement directly with the main session's full context. Do not dispatch a cold Codex executor and do not perform a ceremonial self-handoff.
+Implement directly in the main session. Use the repository's real state and the full conversation; do not perform a ceremonial handoff to a cold executor.
 
-## Authorization
+## Require authorization
 
-Begin only on an explicit go-word such as “go,” “build it,” or “implement the plan.” A standing instruction to continue authorizes the settled plan, not changes to its meaning or user-visible trade-offs.
+Begin only on an explicit go-word such as `go`, `build it`, or `implement`. Authorization covers the settled work, not new behavior, expanded scope, external writes, pushes, deployments, or user-visible trade-offs that were not agreed.
 
-## Implement one verified task at a time
+## Follow the available authority
 
-For each task:
+Read the current request, repository guidance, and relevant artifacts. When present, use this order:
 
-1. Re-read the governing spec section, plan task, and current repository state.
-2. Implement the smallest maintainable change that satisfies the task; use the main session's context to resolve in-scope implementation details.
-3. Inspect the actual diff hunk by hunk against the contracts and trust boundary.
-4. Run the task verification and the proportionate project suite. Treat tool output as evidence, not the model summary.
-5. Diagnose suspected flakes; require three consecutive greens and a cause before accepting one as resolved.
-6. Commit the verified task when the project workflow authorizes commits. Otherwise preserve a clean, reviewable task boundary and state that no commit was made.
+1. the user's latest explicit correction;
+2. an accepted behavior definition;
+3. the implementation plan;
+4. the decision ledger and evidence notes.
 
-Do not start the next task while the current task is red or unexplained.
+If these disagree materially, reconcile the durable artifacts or stop for the owner decision. Do not silently choose the convenient interpretation.
 
-## Handle disagreement without improvising
+## Implement and verify
 
-When plan and reality disagree, diagnose the evidence. Amend the plan when the discrepancy stays inside the gated spec. If it changes behavior, scope, or a user-visible trade-off, stop and bring the conflict to the user. When reality proves the spec wrong, correct the spec in place with dated evidence before continuing.
+For each meaningful change:
 
-Missing capabilities, permissions, dependencies, or external coordination are blockers to discuss, not invitations to find a hidden workaround.
+1. Inspect the affected code and consumers.
+2. Make the smallest maintainable change that satisfies the settled behavior.
+3. Inspect the actual diff for unintended edits.
+4. Run focused checks and the proportionate project suite.
+5. Diagnose failures and suspected flakes from evidence. Do not require an arbitrary number of green runs when one supported run is adequate.
+6. Update documentation, ledgers, behavior definitions, plans, and the repository handoff when the implementation changes what the next session must know.
 
-## Final implementation gate
+Do not create commits, push, deploy, or mutate external systems unless the user's authorization and repository workflow cover that action.
 
-After every plan task is green:
+## Stop instead of improvising
 
-1. Prepare the gated spec, plan, implementation baseline/diff, and verified test results.
-2. Use `$loop-review` for one full Opus implementation review at `xhigh`.
-3. Triage every finding. Fix folded findings and rerun focused plus standard verification.
-4. Run a fresh diff-only Opus verification for material fixes.
-5. Record the result in `<plan-basename>.implementation.review.md` and let the user call convergence.
+Missing permissions, dependencies, capabilities, or external coordination are blockers to report. When reality contradicts settled behavior or exposes a new product trade-off, bring the evidence to the user rather than inventing a workaround.
 
-Report what landed, what verification caught, accepted findings, plan/spec amendments, test evidence, and any conscious residual risk.
+At completion, report the result, changed files, verification evidence, artifact reconciliations, and residual risk. `$loop-review` may be used when an independent pass is valuable; no final Opus gate is mandatory.

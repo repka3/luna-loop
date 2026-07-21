@@ -1,113 +1,100 @@
-# Luna Loop — A Swappable Claude ↔ Codex Development Harness
+# Luna Loop — Swappable Claude and Codex Skill Packs
 
-Luna Loop is a small, copy-installed skill pack for running the same disciplined development loop in either direction:
+Luna Loop installs one small skill pack for Claude Code or Codex. The two packs share an engineering attitude—evidence first, explicit owner decisions, durable project state—but they do not pretend the two drivers think or work identically.
 
-| Mode | Main driver | Independent backstop | Implementation |
+| Pack | Main driver | Optional independent backstop | Implementation |
 |---|---|---|---|
-| Claude-main | Claude Code | Codex | Codex receives bounded execution tasks |
-| Codex-main | Codex | Opus | Codex implements directly with its full session context |
+| Claude-main | Claude Code | Codex | Established Claude-led loop |
+| Codex-main | Codex | Opus | Codex implements with its live session context |
 
-The spirit is shared, but the skills are native to their driver. They are not forced to have identical wording or even identical dispatch mechanics.
+There is no automatic mode switch. Installation and removal are separate, explicit operations.
 
-```text
-interview → spec → independent gate → plan → independent gate → implement → verify
-```
+## Commands
 
-A gate is not a model vote. The driver sends a neutral, context-complete brief, checks every finding against primary evidence and the written trust boundary, records fold/cut/escalate decisions, and lets the user decide convergence.
-
-## Install or switch modes
-
-Prerequisites:
-
-- Bash and standard Unix utilities. On Windows, use Git Bash.
-- Claude Code and Codex CLI, installed and authenticated.
-- Existing, recognizable Claude and Codex config roots. The installer will not invent them.
-
-Clone the repository, enter it, then choose one mode explicitly:
-
-```bash
-./install_codex_main.sh
-```
-
-or:
+Install or refresh one pack:
 
 ```bash
 ./install_claude_main.sh
+./install_codex_main.sh
 ```
 
-Running the other script later switches direction. Updating is `git pull` followed by the same explicit installer.
+Remove one pack:
 
-Check the current mode without changing anything:
+```bash
+./uninstall_claude_main.sh
+./uninstall_codex_main.sh
+```
+
+Inspect both standard skill roots without changing them:
 
 ```bash
 ./who_is_driving.sh
 ```
 
-It reports `Claude is driving.`, `Codex is driving.`, or `Nobody is driving.` A partial, mixed, foreign, or simultaneously active state is reported as inconsistent instead of being guessed.
+The detector makes a best effort from the installed receipt-backed files. It cannot inspect which model is actually handling the current terminal session. If both packs are installed, it reports the driver as ambiguous.
 
-The installed skills are plain copies, never symlinks:
+To switch deliberately:
 
-- Claude skills go to `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills`.
-- Codex user skills go to `$HOME/.agents/skills`—not `.codex/skills`. `CODEX_HOME` (default `$HOME/.codex`) is used only to recognize the Codex installation and is not used as the user-skill destination.
-
-After a successful install, the clone can be deleted without affecting the loop. Clone it again only to update or switch.
-
-The installers do not choose the main Codex model or reasoning effort. Those remain user/session choices.
-
-## Installer safety contract
-
-The two public scripts share one transaction engine. It:
-
-- checks that both CLI names exist on `PATH` but never executes either CLI;
-- recognizes config roots using non-credential sentinels and never reads auth data;
-- rejects direct symlinks, overlapping roots, broad roots, malformed receipts, and foreign content at every managed name;
-- preflights luna-loop names in both skill ecosystems before creating or copying anything;
-- stages complete byte-checked copies on the destination filesystem and writes the ownership receipt last;
-- uses same-filesystem directory renames for cutover and restores the previous selected pack if cutover fails;
-- removes the inactive pack only after the selected pack validates in full;
-- deletes only known files from exact receipt-backed directories, then uses `rmdir`; it contains no recursive deletion command and no wildcard deletion;
-- leaves unrelated Claude and Codex skills alone.
-
-The original Claude-main install used an empty `.luna-loop` marker. That exact two-file legacy layout is migratable only from the real Claude skill root. A marker is never enough by itself: unexpected files turn the directory into a conflict.
-
-Exit codes:
-
-- `0` — selected mode installed and inactive luna-loop pack removed.
-- `1` — ownership/layout conflict; nothing changed.
-- `2` — environment, staging, cutover, or rollback failure.
-- `3` — selected mode is active, but inactive-pack or transaction cleanup was incomplete; inspect the exact path printed by the installer.
-- `64` — invalid or ambiguous invocation.
-
-There is intentionally no automated uninstall command. To uninstall, first inspect the receipt-backed luna-loop directories in the active skill root, then remove only the six active skill directories. Unrelated skills are not part of the pack.
-
-## Codex-main
-
-Codex-main installs six Codex-native skills from `codex_main_driver/skills/`:
-
-- **loop-interview** — discovers facts first and resolves one real user decision at a time.
-- **loop-spec** — writes the behavior authority, trust boundary, failure walkthroughs, acceptance checks, and decision reasons.
-- **loop-plan** — creates a decision-complete plan for direct implementation by the context-rich Codex driver.
-- **loop-review** — runs required Opus gates, triages findings, and maintains review ledgers.
-- **loop-execute** — implements directly after an explicit go-word, verifies each task, and runs the required final implementation gate.
-- **opus** — dispatches fresh read-only, web-enabled Opus sessions for gates, research, and second opinions.
-
-The Codex-main loop is intentionally asymmetric:
-
-```text
-Codex interview
-  → Codex spec
-  → Opus spec gate
-  → Codex plan
-  → Opus plan gate
-  → Codex implements directly
-  → Codex verifies
-  → Opus final implementation gate
-  → user calls convergence
+```bash
+./uninstall_claude_main.sh
+./install_codex_main.sh
 ```
 
-Opus never writes. Dispatches keep normal owner Claude context, allow reading/search plus built-in web search/fetch, and deny shell, editing, agents, Chrome, and MCP tools. Owner-configured hooks remain owner state and may have independent effects.
+or the reverse. Installing one pack never removes the other.
 
-The dispatcher uses `--model opus`, `--effort xhigh`, and a fresh non-persistent session. The alias was measured on 2026-07-17 through Claude's structured `modelUsage` metadata and resolved to `claude-opus-4-8`. Using the supported alias allows a future Opus release to become current without editing the skill. `max` effort is used only when the user explicitly requests it.
+The installed skills are plain copies:
+
+- Claude skills: `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills`
+- Codex skills: `$HOME/.agents/skills`
+
+Updating is `git pull` followed by the relevant installer. The first update from the retired Codex names is intentionally explicit: run `./uninstall_codex_main.sh`, then `./install_codex_main.sh`.
+
+## Script safety
+
+Each script has one job and no shared mode engine.
+
+- Installers validate every source and existing managed destination before copying.
+- Existing receipt-backed skills can be refreshed in place.
+- A foreign, symlinked, modified, or unexpectedly shaped managed directory stops the operation.
+- Uninstallers preflight the whole owned name set before deleting anything.
+- Uninstallers remove only exact known files from receipt-backed directories, then use `rmdir`; they contain no recursive deletion command.
+- Unrelated skills are left alone.
+- The Codex uninstaller recognizes both current and retired luna-loop skill names.
+
+Exit codes are intentionally small:
+
+- `0` — requested operation completed, or the requested pack was already absent.
+- `1` — ownership/layout conflict; the script refused the operation. For the detector, the state is ambiguous or inconsistent.
+- `2` — invalid environment or filesystem operation.
+- `64` — invalid command arguments.
+
+## Codex-main: optional tools, not a ceremony
+
+Codex-main installs six explicit skills from `codex_main_driver/skills/`:
+
+- **loop-ledger** — resolves genuine owner decisions and persists each settled answer immediately.
+- **loop-behavior** — defines exact observable behavior when durable authority is useful.
+- **loop-plan** — plans nontrivial implementation work when sequencing or affected-surface analysis adds value.
+- **loop-review** — runs an optional independent Opus review and triages findings against evidence.
+- **loop-execute** — implements explicitly authorized work directly and verifies it proportionately.
+- **opus** — dispatches a fresh read-only, web-enabled Opus session for review, research, or a second opinion.
+
+All six disable implicit invocation. The user or active workflow selects them deliberately.
+
+The lightest adequate route wins:
+
+```text
+small and clear                     → implement directly
+clear but nontrivial                → plan → implement
+unsettled intent or trade-offs      → ledger → choose the next useful action
+observable rules need authority     → behavior → plan or implement
+evidence-dependent work             → note/research → record decisions if needed
+meaningful independent uncertainty  → optional review at the useful point
+```
+
+These are examples, not mandatory phases. A ledger may end in a note. A behavior definition does not require a ledger. A plan does not require either. Review is never automatic, and implementation still requires an explicit go-word.
+
+Opus remains read-only. Its dispatcher uses the supported `opus` alias, `xhigh` effort by default, and a fresh non-persistent session. `max` is used only when the user explicitly requests it.
 
 ## Claude-main
 
@@ -120,26 +107,29 @@ Claude-main installs the established six-skill pack from `claude_main_driver/ski
 - **loop-execute**
 - **codex**
 
-Claude drives the conversation and gates; Codex is the independent reviewer and bounded executor. Codex calls still follow the machine owner's own `AGENTS.md`, skills, and Codex configuration.
+This redesign does not change the Claude skill sources. Claude drives its established loop; Codex remains its independent reviewer and bounded executor.
 
-## Artifacts
+## Project artifacts
 
-Loop artifacts belong to the project being developed, not this delivery repository:
+Artifacts belong to the project being developed, not this delivery repository. Codex chooses only the artifacts that help the work:
 
-- `docs/specs/YYYY-MM-DD-HHMM-<topic>.md`
-- `docs/plans/YYYY-MM-DD-HHMM-<topic>.md`
-- `docs/notes/YYYY-MM-DD-HHMM-<topic>.md`
-- `<document-basename>.review.md`
-- `<plan-basename>.implementation.review.md`
+- `docs/notes/YYYY-MM-DD-HHMM-<topic>.md` — research, evidence, incidents, roadmaps, and evidence ladders.
+- `docs/ledgers/YYYY-MM-DD-HHMM-<topic>.md` — settled decisions, reversals, open owner decisions, and the resume point.
+- `docs/behaviors/YYYY-MM-DD-HHMM-<topic>.md` — exact observable behavior and acceptance authority.
+- `docs/plans/YYYY-MM-DD-HHMM-<topic>.md` — implementation recipes.
+- `<subject-basename>.review.md` — optional review record beside the reviewed artifact.
+- `<plan-basename>.implementation.review.md` — optional implementation review record.
 
-The material under `docs/` in this repository records earlier design work and measurements. It is historical evidence, not a second source of current installation instructions; this README and the installer code describe the current dual-mode pack.
+Notes are not a required phase. The artifact names describe their job; they do not impose a progression.
 
-## Verification status
+The material under `docs/` in this repository is historical design evidence. It is not a second source of current installation instructions; this README and the five top-level scripts describe the current packs.
 
-The dual-mode installer is measured on Linux with isolated fake homes, both switch directions, idempotent reinstalls, legacy migration, unrelated-skill preservation, malformed/foreign/symlink refusal, missing-root/tool failures, forced mid-cutover rollback, and forced inactive-cleanup failure. The repository test is:
+## Verification
+
+The scripts are exercised with isolated fake homes, independent installation and removal, coexistence detection, idempotent refresh/removal, current and retired Codex packs, custom Claude roots, unrelated-skill preservation, foreign/modified/symlink refusal, and exact receipts:
 
 ```bash
 bash tests/installers.sh
 ```
 
-The test retains its fresh `/tmp/luna-loop-test.*` fixtures for inspection and itself uses no recursive cleanup. macOS and Git Bash are designed-for but should be treated as unmeasured for this new dual-mode installer until their test runs are recorded. Historical Windows Codex sandbox measurements remain under `docs/notes/`.
+Fixtures are retained under `/tmp/luna-loop-test.*` for inspection. The suite and production uninstallers use no recursive deletion command.

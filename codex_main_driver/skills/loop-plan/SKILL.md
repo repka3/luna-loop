@@ -1,40 +1,42 @@
 ---
 name: loop-plan
-description: "Turn a gated specification into a decision-complete plan for direct implementation by the context-rich Codex driver. Use after the spec gate and before any code changes."
+description: "Create a decision-complete implementation plan for nontrivial work when planning adds real value. Invoke only when the user explicitly requests $loop-plan; a ledger or behavior definition may guide it but neither is mandatory."
 ---
 
 # Loop Plan
 
-Produce a plan the current Codex driver can implement directly without dispatching a cold executor. Preserve useful context; do not duplicate every task into a standalone prompt.
+Produce an implementation recipe for work that benefits from sequencing, affected-surface analysis, or explicit verification. Do not create a plan for a small clear change merely to satisfy ceremony.
 
-Output `docs/plans/YYYY-MM-DD-HHMM-<topic>.md` using local time. In a planning-only session, present the complete plan first and persist it only after writes are authorized.
+Output `docs/plans/YYYY-MM-DD-HHMM-<topic>.md` using local time, or update the existing plan.
 
-## Ground the plan in reality
+## Establish authority
 
-- Read the gated spec in full; it remains the behavior authority.
-- Inspect every path, symbol, dependency, command, and precondition the plan will name.
-- Search every changed surface for consumers and pinning tests so the file scope includes what can break, not only what will be edited.
-- Resolve discoverable facts before asking the user. Bring forward only product decisions or trade-offs that remain genuinely open.
+- Read the current request and repository guidance.
+- Read any governing accepted behavior definition, relevant ledger, research note, and existing plan in full.
+- An accepted behavior definition governs observable behavior when present. Without one, settled user instructions and recorded decisions govern.
+- Inspect every path, symbol, dependency, consumer, test, and command the plan will name.
+- Do not invent missing product behavior. Resolve discoverable engineering facts yourself; bring genuine owner decisions back to the user or ledger.
 
-## Plan structure
+## Plan the actual work
 
-Start with the goal, governing spec path, global constraints, and acceptance target. For each dependency-ordered task include:
+Start with the goal, governing artifact paths if any, constraints, and acceptance target. For each dependency-ordered task include only what is useful:
 
-- **Outcome** — the observable result and why the task exists.
+- **Outcome** — the observable result and reason.
 - **Files** — exact create, modify, remove, and test paths.
-- **Interfaces** — contracts consumed and produced, including exact signatures or schemas when relevant.
-- **Implementation** — behavior-level changes and decisions; no placeholders or conversational references.
-- **Verification** — exact commands and expected outcomes that fail on a wrong implementation.
-- **STOP condition** — stop and report when plan, spec, and reality disagree beyond the task's settled scope.
+- **Interfaces and behavior** — exact signatures, schemas, invariants, or state transitions involved.
+- **Implementation** — enough detail to prevent rediscovery without dictating mechanical keystrokes.
+- **Verification** — exact commands and expected evidence that can expose a wrong implementation.
+- **Stop condition** — evidence or disagreement that requires replanning or an owner decision.
 
-Tasks should be the smallest units worth independently verifying, not mechanical micro-steps. A task may consume only repository state or outputs from earlier tasks.
+Tasks should be the smallest units worth independently verifying, not ceremonial micro-steps.
 
-## Self-review
+## Check before handoff
 
-- Map every spec requirement and acceptance check to at least one task.
-- Remove `TBD`, ellipses standing in for contracts, and instructions such as “handle appropriately” or “similar to the previous task.”
-- Check interface names and types across task boundaries.
-- Check dependency order and the complete affected-file surface.
-- Ensure verification includes the project standard suite where proportionate.
+- Cover the complete affected surface, including consumers, migrations, documentation, and pinning tests.
+- Map every applicable behavior rule and acceptance observation to a task.
+- Remove placeholders and phrases such as `handle appropriately`.
+- Check dependency order and interface names against the repository.
+- Keep verification proportionate to risk.
+- Reconcile any ledger, behavior definition, and repository handoff changed by the plan.
 
-Hand the plan to `$loop-review`. A plan is not execution authorization; `$loop-execute` begins only on the user's explicit go-word.
+A plan does not authorize implementation. `$loop-review` is available when independent review is worth its cost; it is not a mandatory gate. `$loop-execute` starts only on explicit implementation authorization.

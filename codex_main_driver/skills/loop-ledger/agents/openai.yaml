@@ -1,0 +1,7 @@
+interface:
+  display_name: "Loop Ledger"
+  short_description: "Settle and persist owner decisions"
+  default_prompt: "Use $loop-ledger to resolve the remaining owner decisions and persist each settled answer immediately."
+
+policy:
+  allow_implicit_invocation: false

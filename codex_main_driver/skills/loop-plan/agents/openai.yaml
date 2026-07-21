@@ -1,4 +1,7 @@
 interface:
   display_name: "Loop Plan"
-  short_description: "Plan context-rich direct Codex implementation"
-  default_prompt: "Use $loop-plan to produce a decision-complete implementation plan from the gated spec."
+  short_description: "Plan nontrivial implementation work"
+  default_prompt: "Use $loop-plan to create a decision-complete, evidence-grounded implementation plan for this work."
+
+policy:
+  allow_implicit_invocation: false
