@@ -5,7 +5,8 @@ set -u
 TEST_DIR="$(cd "$(dirname "$0")" && pwd -P)" || exit 1
 REPO_ROOT="$(cd "$TEST_DIR/.." && pwd -P)" || exit 1
 CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
-CODEX_TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
+CODEX_TARGETS="loop opus"
+PREVIOUS_CODEX_TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
 LEGACY_CODEX_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute opus"
 PASS_COUNT=0
 FAIL_COUNT=0
@@ -82,10 +83,11 @@ assert_receipts() {
   [ "$failed" -eq 0 ]
 }
 
-write_legacy_codex_pack() {
+write_retired_codex_pack() {
   local root="$1" skill
+  shift
   mkdir -p "$root" || exit 1
-  for skill in $LEGACY_CODEX_TARGETS; do
+  for skill in "$@"; do
     mkdir -p "$root/$skill/agents" || exit 1
     printf '%s\n' '---' "name: $skill" '---' > "$root/$skill/SKILL.md" || exit 1
     printf 'interface: {}\n' > "$root/$skill/agents/openai.yaml" || exit 1
@@ -94,7 +96,16 @@ write_legacy_codex_pack() {
   done
 }
 
+codex_source_layout_is_exact() {
+  local actual
+  actual="$(find "$REPO_ROOT/codex_main_driver/skills" \
+    -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C sort)"
+  [ "$actual" = "$(printf 'loop\nopus')" ]
+}
+
 printf 'fixtures are retained under /tmp/luna-loop-test.* for inspection\n'
+
+assert_true "Codex source pack has exactly loop and opus" codex_source_layout_is_exact
 
 # Empty roots are a determinate state.
 new_fixture
@@ -122,8 +133,10 @@ assert_true "Codex receipts are exact" assert_receipts \
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "Codex reinstall is idempotent" 0
 assert_true "Codex install is a byte copy" cmp -s \
-  "$REPO_ROOT/codex_main_driver/skills/loop-behavior/SKILL.md" \
-  "$CASE_HOME/.agents/skills/loop-behavior/SKILL.md"
+  "$REPO_ROOT/codex_main_driver/skills/loop/SKILL.md" \
+  "$CASE_HOME/.agents/skills/loop/SKILL.md"
+assert_false "retired workflow names are not installed" \
+  test -e "$CASE_HOME/.agents/skills/loop-ledger"
 assert_false "retired interview name is not installed" \
   test -e "$CASE_HOME/.agents/skills/loop-interview"
 assert_true "Claude pack remains installed" test -f "$CASE_CLAUDE/skills/loop-spec/SKILL.md"
@@ -139,7 +152,7 @@ run_script "$REPO_ROOT/who_is_driving.sh"
 assert_output "inspection reports Codex" "Codex is driving."
 run_script "$REPO_ROOT/uninstall_codex_main.sh"
 assert_status "Codex uninstall succeeds" 0
-assert_false "Codex pack is removed" test -e "$CASE_HOME/.agents/skills/loop-behavior"
+assert_false "Codex pack is removed" test -e "$CASE_HOME/.agents/skills/loop"
 assert_true "unrelated skill survives" test -f "$CASE_HOME/.agents/skills/unrelated/owner.txt"
 run_script "$REPO_ROOT/who_is_driving.sh"
 assert_output "inspection returns to nobody" "Nobody is driving."
@@ -155,7 +168,7 @@ assert_status "foreign Codex target blocks install" 1
 assert_true "foreign target survives install refusal" \
   test -f "$CASE_HOME/.agents/skills/loop-plan/KEEP"
 assert_false "refused install creates no partial pack" \
-  test -e "$CASE_HOME/.agents/skills/loop-ledger"
+  test -e "$CASE_HOME/.agents/skills/loop"
 run_script "$REPO_ROOT/uninstall_codex_main.sh"
 assert_status "foreign Codex target blocks uninstall" 1
 assert_true "foreign target survives uninstall refusal" \
@@ -165,32 +178,44 @@ assert_true "foreign target survives uninstall refusal" \
 new_fixture
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "modified-layout setup install" 0
-printf 'unexpected\n' > "$CASE_HOME/.agents/skills/loop-review/EXTRA" || exit 1
+printf 'unexpected\n' > "$CASE_HOME/.agents/skills/loop/EXTRA" || exit 1
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "modified owned target blocks refresh" 1
 run_script "$REPO_ROOT/uninstall_codex_main.sh"
 assert_status "modified owned target blocks uninstall" 1
 assert_true "unexpected content remains untouched" \
-  test -f "$CASE_HOME/.agents/skills/loop-review/EXTRA"
+  test -f "$CASE_HOME/.agents/skills/loop/EXTRA"
 
-# The retired Codex pack is detected and removed only by the explicit uninstaller.
+# The previous Codex pack is detected and removed only by the explicit uninstaller.
 new_fixture
-write_legacy_codex_pack "$CASE_HOME/.agents/skills"
+write_retired_codex_pack "$CASE_HOME/.agents/skills" $PREVIOUS_CODEX_TARGETS
 run_script "$REPO_ROOT/who_is_driving.sh"
-assert_status "retired Codex pack is recognized" 0
-assert_output "retired Codex pack is reported" \
-  "Codex is driving with the retired skill names; reinstall is recommended."
+assert_status "previous Codex pack is recognized" 0
+assert_output "previous Codex pack is reported" \
+  "Codex is driving with a retired six-skill pack; reinstall is recommended."
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "current installer refuses implicit retired-name migration" 1
 assert_true "retired pack remains after refusal" \
-  test -f "$CASE_HOME/.agents/skills/loop-interview/SKILL.md"
+  test -f "$CASE_HOME/.agents/skills/loop-ledger/SKILL.md"
 run_script "$REPO_ROOT/uninstall_codex_main.sh"
 assert_status "Codex uninstaller removes retired pack" 0
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "current Codex pack installs after explicit uninstall" 0
 assert_true "current pack replaces retired names" \
-  test -f "$CASE_HOME/.agents/skills/loop-ledger/SKILL.md"
-assert_false "retired spec name stays absent" \
+  test -f "$CASE_HOME/.agents/skills/loop/SKILL.md"
+assert_false "retired ledger name stays absent" \
+  test -e "$CASE_HOME/.agents/skills/loop-ledger"
+
+# The oldest Codex six-skill pack remains detectable and removable.
+new_fixture
+write_retired_codex_pack "$CASE_HOME/.agents/skills" $LEGACY_CODEX_TARGETS
+run_script "$REPO_ROOT/who_is_driving.sh"
+assert_status "oldest Codex pack is recognized" 0
+assert_output "oldest Codex pack is reported" \
+  "Codex is driving with a retired six-skill pack; reinstall is recommended."
+run_script "$REPO_ROOT/uninstall_codex_main.sh"
+assert_status "Codex uninstaller removes oldest pack" 0
+assert_false "oldest spec name is removed" \
   test -e "$CASE_HOME/.agents/skills/loop-spec"
 
 # Custom Claude roots and the original empty Claude marker remain supported.

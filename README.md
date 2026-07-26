@@ -1,6 +1,8 @@
-# Luna Loop — Swappable Claude and Codex Skill Packs
+# Luna Loop v3 — Swappable Claude and Codex Skill Packs
 
 Luna Loop installs one small skill pack for Claude Code or Codex. The two packs share an engineering attitude—evidence first, explicit owner decisions, durable project state—but they do not pretend the two drivers think or work identically.
+
+Version 3 is a Codex-focused fix. It leaves Claude-main unchanged and replaces Codex-main's five separate workflow-phase skills with one adaptive `loop` skill alongside `opus`. The result is lighter and more context-aware: small, settled work stays small, while difficult system work can still use durable decisions, a falsifiable design contract, a repository-grounded plan, and independently triaged reviews when those controls protect against a real failure mode.
 
 | Pack | Main driver | Optional independent backstop | Implementation |
 |---|---|---|---|
@@ -47,7 +49,7 @@ The installed skills are plain copies:
 - Claude skills: `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills`
 - Codex skills: `$HOME/.agents/skills`
 
-Updating is `git pull` followed by the relevant installer. The first update from the retired Codex names is intentionally explicit: run `./uninstall_codex_main.sh`, then `./install_codex_main.sh`.
+Updating is `git pull` followed by the relevant installer. Moving from either retired six-skill Codex pack is intentionally explicit: run `./uninstall_codex_main.sh`, then `./install_codex_main.sh`.
 
 ## Script safety
 
@@ -59,7 +61,7 @@ Each script has one job and no shared mode engine.
 - Uninstallers preflight the whole owned name set before deleting anything.
 - Uninstallers remove only exact known files from receipt-backed directories, then use `rmdir`; they contain no recursive deletion command.
 - Unrelated skills are left alone.
-- The Codex uninstaller recognizes both current and retired luna-loop skill names.
+- The Codex uninstaller recognizes the current two-skill pack and both retired six-skill layouts.
 
 Exit codes are intentionally small:
 
@@ -68,33 +70,33 @@ Exit codes are intentionally small:
 - `2` — invalid environment or filesystem operation.
 - `64` — invalid command arguments.
 
-## Codex-main: optional tools, not a ceremony
+## Codex-main: one adaptive loop
 
-Codex-main installs six explicit skills from `codex_main_driver/skills/`:
+Codex-main installs two skills from `codex_main_driver/skills/`:
 
-- **loop-ledger** — resolves genuine owner decisions and persists each settled answer immediately.
-- **loop-behavior** — defines exact observable behavior when durable authority is useful.
-- **loop-plan** — plans nontrivial implementation work when sequencing or affected-surface analysis adds value.
-- **loop-review** — runs an optional independent Opus review and triages findings against evidence.
-- **loop-execute** — implements explicitly authorized work directly and verifies it proportionately.
+- **loop** — chooses the lightest disciplined route through evidence gathering, architectural discussion, durable decisions, a falsifiable design contract, implementation planning, direct implementation, and verification.
 - **opus** — dispatches a fresh read-only, web-enabled Opus session for review, research, or a second opinion.
 
-All six disable implicit invocation. The user or active workflow selects them deliberately.
+Invoke `$loop`, say `Luna Loop`, or ask to `use the loop`. Codex inspects read-only context, recommends a route, and asks for confirmation when the route is not already explicit. `$opus` remains explicitly authorized because every dispatch is billable.
 
 The lightest adequate route wins:
 
 ```text
-small and clear                     → implement directly
-clear but nontrivial                → plan → implement
-unsettled intent or trade-offs      → ledger → choose the next useful action
-observable rules need authority     → behavior → plan or implement
-evidence-dependent work             → note/research → record decisions if needed
-meaningful independent uncertainty  → optional review at the useful point
+small, settled, and local                 → implement directly
+settled but mechanically nontrivial       → plan → implement
+unsettled decisions, clear implementation → ledger → plan → implement
+multiple compliant designs remain         → contract → plan or implement
+genuinely hard system work                 → ledger → contract → optional reviews
+                                                → plan → implement → verify
 ```
 
-These are examples, not mandatory phases. A ledger may end in a note. A behavior definition does not require a ledger. A plan does not require either. Review is never automatic, and implementation still requires an explicit go-word.
+These are examples, not mandatory phases. A ledger, contract, plan, or review exists only when it protects against a real failure mode. Skipping an artifact never permits skipping the reasoning it would have protected.
 
-Opus remains read-only. Its dispatcher uses the supported `opus` alias, `xhigh` effort by default, and a fresh non-persistent session. `max` is used only when the user explicitly requests it.
+The loop prefers measured repository and system evidence over confident guesses. It distinguishes observed facts, inferences, unknowns, and owner choices. When evidence cannot be collected within existing authority, Codex proposes the exact probe instead of improvising.
+
+Authorization does not cascade. Discussion does not authorize implementation; implementation does not authorize commits; commits do not authorize pushes; and none of those authorize image builds, publication, releases, or deployment. One instruction may authorize several actions only when it names them and their material targets clearly.
+
+Opus may challenge discussion, contracts, plans, research, or implementation. Every finding is triaged as fold, cut, or escalate; Opus severity labels are claims, not verdicts. A clean review is never a convergence requirement. The dispatcher uses the supported `opus` alias, `xhigh` effort by default, and a fresh non-persistent session. `max` is used only when the user explicitly requests it.
 
 ## Claude-main
 
@@ -111,22 +113,31 @@ This redesign does not change the Claude skill sources. Claude drives its establ
 
 ## Project artifacts
 
-Artifacts belong to the project being developed, not this delivery repository. Codex chooses only the artifacts that help the work:
+Artifacts belong to the project being developed, not this delivery repository. Every new artifact starts with local `YYYY-MM-DD-HHMM` so files sort chronologically. Codex creates only the artifacts that help:
 
 - `docs/notes/YYYY-MM-DD-HHMM-<topic>.md` — research, evidence, incidents, roadmaps, and evidence ladders.
 - `docs/ledgers/YYYY-MM-DD-HHMM-<topic>.md` — settled decisions, reversals, open owner decisions, and the resume point.
-- `docs/behaviors/YYYY-MM-DD-HHMM-<topic>.md` — exact observable behavior and acceptance authority.
+- `docs/contracts/YYYY-MM-DD-HHMM-<topic>.md` — falsifiable behavior and intentionally constrained architecture.
 - `docs/plans/YYYY-MM-DD-HHMM-<topic>.md` — implementation recipes.
-- `<subject-basename>.review.md` — optional review record beside the reviewed artifact.
-- `<plan-basename>.implementation.review.md` — optional implementation review record.
+- `<timestamped-subject-basename>.review.md` — optional durable triage record beside the reviewed artifact.
 
 Notes are not a required phase. The artifact names describe their job; they do not impose a progression.
 
-The material under `docs/` in this repository is historical design evidence. It is not a second source of current installation instructions; this README and the five top-level scripts describe the current packs.
+The material under `docs/` in this repository is historical design evidence. It is not a second source of current installation instructions; this README and the top-level scripts describe the current packs.
+
+## Ubuntu 24.04 Bubblewrap repair
+
+If Codex fails before commands start with `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`, run:
+
+```bash
+./fix_ubuntu_codex_bwrap.sh
+```
+
+The script confirms its host changes interactively, installs Ubuntu's packaged Bubblewrap and AppArmor profile support, loads the specific `bwrap` profile, and probes user and network namespace creation. It does not disable AppArmor's unprivileged-user-namespace restriction globally.
 
 ## Verification
 
-The scripts are exercised with isolated fake homes, independent installation and removal, coexistence detection, idempotent refresh/removal, current and retired Codex packs, custom Claude roots, unrelated-skill preservation, foreign/modified/symlink refusal, and exact receipts:
+The scripts are exercised with isolated fake homes, independent installation and removal, coexistence detection, idempotent refresh/removal, the current and both retired Codex packs, custom Claude roots, unrelated-skill preservation, foreign/modified/symlink refusal, and exact receipts:
 
 ```bash
 bash tests/installers.sh

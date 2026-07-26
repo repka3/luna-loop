@@ -1,7 +1,0 @@
-interface:
-  display_name: "Loop Review"
-  short_description: "Run an optional independent review"
-  default_prompt: "Use $loop-review to independently review this artifact or implementation and triage every finding against evidence."
-
-policy:
-  allow_implicit_invocation: false

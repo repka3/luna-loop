@@ -2,8 +2,8 @@
 # Install or refresh only the Codex-main luna-loop pack.
 set -u
 
-TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
-RETIRED_TARGETS="loop-interview loop-spec"
+TARGETS="loop opus"
+RETIRED_TARGETS="loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute"
 MARKER=".luna-loop"
 
 fail() {
@@ -63,7 +63,7 @@ for checked in "$AGENTS_ROOT" "$SKILLS_ROOT"; do
   fi
 done
 
-# The renamed pack is an explicit migration: uninstall the old pack first.
+# Moving from either retired six-skill pack is explicit: uninstall it first.
 for skill in $RETIRED_TARGETS; do
   destination="$SKILLS_ROOT/$skill"
   if path_exists "$destination"; then

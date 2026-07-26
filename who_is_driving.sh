@@ -4,9 +4,10 @@ set -u
 
 MARKER=".luna-loop"
 CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
-CODEX_TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
+CODEX_TARGETS="loop opus"
+PREVIOUS_CODEX_TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
 LEGACY_CODEX_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute opus"
-CODEX_MANAGED_TARGETS="loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute opus"
+CODEX_MANAGED_TARGETS="loop loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute opus"
 
 if [ "$#" -ne 0 ]; then
   echo "usage: ./who_is_driving.sh" >&2
@@ -93,10 +94,12 @@ codex_state() {
   done
   if [ "$seen" -eq 0 ]; then
     printf '%s\n' empty
-  elif [ "$seen" -eq 6 ] && codex_set_complete "$root" "$CODEX_TARGETS"; then
+  elif [ "$seen" -eq 2 ] && codex_set_complete "$root" "$CODEX_TARGETS"; then
     printf '%s\n' complete
+  elif [ "$seen" -eq 6 ] && codex_set_complete "$root" "$PREVIOUS_CODEX_TARGETS"; then
+    printf '%s\n' retired
   elif [ "$seen" -eq 6 ] && codex_set_complete "$root" "$LEGACY_CODEX_TARGETS"; then
-    printf '%s\n' legacy
+    printf '%s\n' retired
   else
     printf '%s\n' inconsistent
   fi
@@ -121,15 +124,15 @@ if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = complete ]; then
   echo "Codex is driving."
   exit 0
 fi
-if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = legacy ]; then
-  echo "Codex is driving with the retired skill names; reinstall is recommended."
+if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = retired ]; then
+  echo "Codex is driving with a retired six-skill pack; reinstall is recommended."
   exit 0
 fi
 if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = empty ]; then
   echo "Nobody is driving."
   exit 0
 fi
-if [ "$CLAUDE_STATE" = complete ] && { [ "$CODEX_STATE" = complete ] || [ "$CODEX_STATE" = legacy ]; }; then
+if [ "$CLAUDE_STATE" = complete ] && { [ "$CODEX_STATE" = complete ] || [ "$CODEX_STATE" = retired ]; }; then
   echo "Both Claude and Codex packs are installed; the driver is ambiguous."
   exit 1
 fi

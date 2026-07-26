@@ -5,7 +5,7 @@ description: "Dispatch a fresh read-only, web-enabled Opus session for independe
 
 # Opus Dispatch
 
-Opus is an optional independent reviewer and research assistant. It never implements changes. The main Codex driver owns context, synthesis, writes, tests, and decisions.
+Opus is an optional independent reviewer and research assistant. It may challenge discussion, a design contract, a plan, an implementation, or a research question, but it never implements changes. The main Codex driver owns context, synthesis, triage, writes, tests, and decisions.
 
 ## Fixed boundary
 
@@ -52,8 +52,8 @@ claude -p \
 
 ## Use the result
 
-- **Review** — return numbered, referenced findings with severity, evidence, and practical cost for `$loop-review` or the driver to triage.
+- **Review** — return numbered findings classified as blocker, major, minor, or nitpick, with exact references, realistic reachability, concrete impact, uncertainty, and the smallest supported correction for `$loop` or the driver to triage.
 - **Research** — require direct sources, dates, uncertainty, alternatives, and conflicting evidence; independently verify material claims before deciding.
 - **Second opinion** — state the question neutrally and compare the result against primary evidence rather than accepting it by model identity.
 
-Read the raw output from scratch and distill it into the active context. Delete only the exact scratch directory created for the run. The Opus response remains a claim until the driver verifies it.
+Read the raw output from scratch and distill it into the active context. Never use the absence of findings as a convergence requirement, and never repeat a review merely to make Opus return clean. Delete only the exact scratch directory created for the run. The Opus response and its severity labels remain claims until the driver verifies and triages them.

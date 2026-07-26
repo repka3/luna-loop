@@ -2,7 +2,7 @@
 # Remove receipt-backed current or retired Codex-main luna-loop skills.
 set -u
 
-TARGETS="loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute opus"
+TARGETS="loop loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute opus"
 MARKER=".luna-loop"
 
 path_exists() { [ -e "$1" ] || [ -L "$1" ]; }
