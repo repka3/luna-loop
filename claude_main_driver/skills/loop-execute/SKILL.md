@@ -1,11 +1,11 @@
 ---
 name: loop-execute
-description: "Execute a gated plan task-by-task as cold codex dispatches: extract each task's promptfile, verify the diff and tests yourself, commit green before the next task; a STOP amends the plan. Spends money and writes files — invoke only on the user's explicit go-word, never because a gated plan merely exists."
+description: "Execute a settled plan task-by-task as cold codex dispatches: extract each task's promptfile, verify the diff and tests yourself, commit green before the next task; a STOP amends the plan. Spends money and writes files — invoke only on the user's explicit go-word, never because a settled plan merely exists."
 ---
 
-# loop-execute — the phase after the plan gate
+# loop-execute — the phase after the plan settles
 
-A gated plan is a sequence of cold dispatches; this skill is the driver's loop
+A settled plan is a sequence of cold dispatches; this skill is the driver's loop
 that runs them: **dispatch → verify → commit → next**. How to call codex
 (flags, sandbox, effort, run handling) is the `codex` skill — implementation
 shape. What a task must contain is `loop-plan`'s contract. This skill owns the
@@ -14,7 +14,7 @@ cadence and what happens when reality pushes back.
 ## Invocation is the user's go-word
 
 "Go", "build it", "dispatch task 1", "continue the plan." Execution spends
-money and writes files, so it starts on the user's word — a gated plan's
+money and writes files, so it starts on the user's word — a settled plan's
 existence is never the trigger. A standing "keep going" authorizes the whole
 run: from then on, plan-level snags (stops, amendments, verification fixes)
 are yours to handle and report; interrupt only for decisions that change the

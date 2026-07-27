@@ -1,6 +1,6 @@
 ---
 name: loop-plan
-description: "Turn a gated spec into an implementation plan whose tasks are cold-executor dispatches: exact files, interfaces, contracts verbatim, verify commands, STOP rule. Use after a spec has passed its review gate."
+description: "Turn settled behavior into an implementation plan whose tasks are cold-executor dispatches: exact files, interfaces, contracts verbatim, verify commands, STOP rule. Use when execution will be dispatched cold or sequencing needs durable precision — with or without a separate spec."
 ---
 
 # loop-plan — a plan is a sequence of dispatches
@@ -17,9 +17,12 @@ Output: `mkdir -p docs/plans` (relative to the project root), then
 ## Structure
 
 **Header:** the goal in one sentence, then **Global Constraints** copied
-verbatim from the gated spec — version floors, naming rules, platform
+verbatim from the governing spec — version floors, naming rules, platform
 requirements, shared schemas and exact strings that multiple tasks consume.
-Anything a lone task will need must live here or in the task itself.
+When no separate spec exists, the exact behavioral rules and acceptance
+evidence live here, held to the spec's bar — no ranges standing in for
+unmade decisions, no undefined terms. Anything a lone task will need must
+live here or in the task itself.
 
 **Per task:**
 - **Files:** exact paths — `Create:` / `Modify: path:lines` / `Test:`.
@@ -59,9 +62,10 @@ or the executor meets them mid-task and stops.
   2–5-minute micro-steps. The executor is a capable model, not a typist.
 - **Dependency order:** a task may only consume what earlier tasks or the
   repo already provide.
-- **The spec wins.** If this plan and the gated spec disagree, the plan is
-  wrong — fix the plan. If reality disagrees with both, that is a spec
-  correction (dated, in place), never a planning improvisation.
+- **The spec wins.** When a governing spec exists, a disagreement between it
+  and this plan is a plan bug — fix the plan. If reality disagrees with
+  both, that is a spec correction (dated, in place), never a planning
+  improvisation.
 
 ## Self-review
 

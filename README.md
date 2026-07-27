@@ -1,15 +1,25 @@
-# Luna Loop v3 — Swappable Claude and Codex Skill Packs
+# Luna Loop v4 — Swappable Claude and Codex Skill Packs
 
 Luna Loop installs one small skill pack for Claude Code or Codex. The two packs share an engineering attitude—evidence first, explicit owner decisions, durable project state—but they do not pretend the two drivers think or work identically.
 
-Version 3 is a Codex-focused fix. It leaves Claude-main unchanged and replaces Codex-main's five separate workflow-phase skills with one adaptive `loop` skill alongside `opus`. The result is lighter and more context-aware: small, settled work stays small, while difficult system work can still use durable decisions, a falsifiable design contract, a repository-grounded plan, and independently triaged reviews when those controls protect against a real failure mode.
+Version 3 replaced Codex-main's five workflow-phase skills with one adaptive `loop` skill beside `opus`. Version 4 brings adaptivity to Claude-main: a `luna-loop` entry recommends the lightest adequate route, and the remaining skills — spec, plan, review, execute, codex — become controls it invokes only when they protect against a real failure mode, never mandatory phases. Small, settled work stays small, while hard system work can still use a falsifiable spec, blind review gates, a repository-grounded plan, and task-by-task cold execution. The two fixes are deliberately not the same fix; the asymmetry section below explains why.
 
 | Pack | Main driver | Optional independent backstop | Implementation |
 |---|---|---|---|
-| Claude-main | Claude Code | Codex | Established Claude-led loop |
+| Claude-main | Claude Code | Codex | Claude implements small settled work directly; planned work runs as cold Codex dispatches |
 | Codex-main | Codex | Opus | Codex implements with its live session context |
 
 There is no automatic mode switch. Installation and removal are separate, explicit operations.
+
+## The asymmetry is intentional
+
+The structural difference is who implements. In Claude-main the driver never implements planned work itself: Claude drives, and implementation is dispatched to Codex — a cold executor from a different model family — with the driver verifying every diff. In Codex-main the driver and the implementer are the same agent: Codex implements with its own live session context, and the independent backstop (Opus) only reviews.
+
+That split is why the packs cannot be mirror images. Claude-main needs its deep control skills because its documents are inter-agent interfaces: the spec and plan formats are the wire format to a cold executor that sees nothing but its promptfile, and the review machinery is the interface to a blind reviewer. Codex-main has no cold executor to feed, so its artifacts only serve decisions and durability — which is why they could collapse into one adaptive skill.
+
+The entry skills differ for a second reason: the drivers fail in opposite directions. Codex fought imposed phase divisions — given separate mandatory workflow skills, it produced hollow artifacts or abandoned the loop entirely (the v2 field experience); its fix was flattening into one skill it actually reads and follows. Claude over-complies — given a six-phase pipeline, it dutifully runs the full ceremony on work that needed none of it; its fix is route selection that makes skipping legal, not flattening.
+
+A mirror-image simplification would have fixed a problem Claude does not have while destroying protocol its architecture still depends on. Do not "unify" the packs; their difference is the design.
 
 ## Commands
 
@@ -49,7 +59,7 @@ The installed skills are plain copies:
 - Claude skills: `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills`
 - Codex skills: `$HOME/.agents/skills`
 
-Updating is `git pull` followed by the relevant installer. Moving from either retired six-skill Codex pack is intentionally explicit: run `./uninstall_codex_main.sh`, then `./install_codex_main.sh`.
+Updating is `git pull` followed by the relevant installer. Moving from a retired layout is intentionally explicit: run the pack's uninstaller, then its installer. This applies to both retired six-skill Codex packs and to the retired Claude pack that shipped `loop-interview`.
 
 ## Script safety
 
@@ -61,7 +71,7 @@ Each script has one job and no shared mode engine.
 - Uninstallers preflight the whole owned name set before deleting anything.
 - Uninstallers remove only exact known files from receipt-backed directories, then use `rmdir`; they contain no recursive deletion command.
 - Unrelated skills are left alone.
-- The Codex uninstaller recognizes the current two-skill pack and both retired six-skill layouts.
+- Each uninstaller recognizes its current pack and its retired layouts (Codex: both retired six-skill packs; Claude: the retired `loop-interview` pack).
 
 Exit codes are intentionally small:
 
@@ -98,18 +108,35 @@ Authorization does not cascade. Discussion does not authorize implementation; im
 
 Opus may challenge discussion, contracts, plans, research, or implementation. Every finding is triaged as fold, cut, or escalate; Opus severity labels are claims, not verdicts. A clean review is never a convergence requirement. The dispatcher uses the supported `opus` alias, `xhigh` effort by default, and a fresh non-persistent session. `max` is used only when the user explicitly requests it.
 
-## Claude-main
+## Claude-main: adaptive entry, deep controls
 
-Claude-main installs the established six-skill pack from `claude_main_driver/skills/`:
+Claude-main installs six skills from `claude_main_driver/skills/`:
 
-- **loop-interview**
-- **loop-spec**
-- **loop-plan**
-- **loop-review**
-- **loop-execute**
-- **codex**
+- **luna-loop** — the adaptive entry: interview discipline, lightest-adequate-route selection, evidence rules, and non-cascading authorization. It invokes the other skills as controls.
+- **loop-spec** — freezes settled decisions into a falsifiable specification whose Trust Boundary calibrates review triage.
+- **loop-plan** — turns settled behavior into cold-executor dispatches: exact files, contracts verbatim, verify commands, STOP rule.
+- **loop-review** — the blind Codex review gate: dispatch composition, fold/cut/escalate triage, the review ledger.
+- **loop-execute** — runs a settled plan task-by-task as cold Codex dispatches: dispatch → verify → commit → next.
+- **codex** — dispatch mechanics: sandbox table, call shapes, effort economics, never resume.
 
-This redesign does not change the Claude skill sources. Claude drives its established loop; Codex remains its independent reviewer and bounded executor.
+The entry is named `luna-loop`, not `loop`, because Claude Code ships a built-in `/loop` command; the Codex skill root has no such collision.
+
+The lightest adequate route wins:
+
+```text
+small, settled, and local            → implement directly, verify
+settled, needs durable sequencing    → plan → dispatch → verify
+decisions unsettled                  → interview → one of the above
+multiple compliant designs remain    → interview → spec → plan → …
+hard system work                     → interview → spec → gate → plan
+                                          → gate → dispatch → verify
+```
+
+The execution line: work that needs no plan, Claude implements and verifies in place; work that earns a plan is dispatched cold to Codex — the plan format exists to be extracted into promptfiles, and the cold executor's STOP rule is part of what a plan buys.
+
+Unlike Codex-main, whose driver implements with its live session context, Claude-main keeps the deep protocol skills: the spec and plan formats are the interface to a cold executor, and the review machinery is the interface to a blind reviewer. The entry skill decides *whether* those interfaces are needed; the control skills define *how* they work.
+
+Every skill is self-contained by design: the pack assumes no machine-level `CLAUDE.md` or other standing configuration, so it behaves identically on a fresh machine.
 
 ## Project artifacts
 

@@ -1,6 +1,6 @@
 ---
 name: loop-spec
-description: "Write a specification from settled decisions: goal, trust boundary and non-goals, numbered requirements with acceptance checks, decisions with their why. Use when an interview has produced spec-ready decisions."
+description: "Write a specification from settled decisions: goal, trust boundary and non-goals, numbered requirements with acceptance checks, decisions with their why. Use when materially different behaviors could all comply with what is settled, or a review gate needs a Trust Boundary to triage against."
 ---
 
 # loop-spec — write it down so it can be gated
@@ -39,7 +39,7 @@ makes lexicographic order chronological).
 7. **Decisions** — each with its *why*, so review rounds don't re-litigate
    them and future readers don't reopen them by accident.
 8. **Open Questions** — must be **empty** before the review gate; if it
-   isn't, go back to `loop-interview`. Facts that only another machine or a
+   isn't, go back to the interview (`luna-loop`). Facts that only another machine or a
    later phase can verify are not open questions — they go in a **Pending
    Measurements** list with a named owner.
 

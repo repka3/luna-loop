@@ -2,7 +2,8 @@
 # Remove only receipt-backed Claude-main luna-loop skills.
 set -u
 
-TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
+# Includes the retired loop-interview name so the retired pack uninstalls cleanly.
+TARGETS="luna-loop loop-interview loop-spec loop-plan loop-review loop-execute codex"
 MARKER=".luna-loop"
 
 path_exists() { [ -e "$1" ] || [ -L "$1" ]; }

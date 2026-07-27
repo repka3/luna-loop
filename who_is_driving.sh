@@ -3,7 +3,9 @@
 set -u
 
 MARKER=".luna-loop"
-CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
+CLAUDE_TARGETS="luna-loop loop-spec loop-plan loop-review loop-execute codex"
+RETIRED_CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
+CLAUDE_MANAGED_TARGETS="luna-loop loop-interview loop-spec loop-plan loop-review loop-execute codex"
 CODEX_TARGETS="loop opus"
 PREVIOUS_CODEX_TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
 LEGACY_CODEX_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute opus"
@@ -53,23 +55,29 @@ codex_target_valid() {
   [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text codex-main "$skill" codex-v1)" ]
 }
 
+claude_set_complete() {
+  local root="$1" targets="$2" skill
+  for skill in $targets; do
+    claude_target_valid "$root/$skill" "$skill" || return 1
+  done
+}
+
 claude_state() {
-  local root="$1" seen=0 valid=0 skill target
+  local root="$1" seen=0 skill target
   if path_exists "$root" && ! plain_dir "$root"; then
     printf '%s\n' inconsistent
     return
   fi
-  for skill in $CLAUDE_TARGETS; do
+  for skill in $CLAUDE_MANAGED_TARGETS; do
     target="$root/$skill"
-    if path_exists "$target"; then
-      seen=$((seen + 1))
-      claude_target_valid "$target" "$skill" && valid=$((valid + 1))
-    fi
+    path_exists "$target" && seen=$((seen + 1))
   done
   if [ "$seen" -eq 0 ]; then
     printf '%s\n' empty
-  elif [ "$seen" -eq 6 ] && [ "$valid" -eq 6 ]; then
+  elif [ "$seen" -eq 6 ] && claude_set_complete "$root" "$CLAUDE_TARGETS"; then
     printf '%s\n' complete
+  elif [ "$seen" -eq 6 ] && claude_set_complete "$root" "$RETIRED_CLAUDE_TARGETS"; then
+    printf '%s\n' retired
   else
     printf '%s\n' inconsistent
   fi
@@ -120,6 +128,10 @@ if [ "$CLAUDE_STATE" = complete ] && [ "$CODEX_STATE" = empty ]; then
   echo "Claude is driving."
   exit 0
 fi
+if [ "$CLAUDE_STATE" = retired ] && [ "$CODEX_STATE" = empty ]; then
+  echo "Claude is driving with a retired six-skill pack; reinstall is recommended."
+  exit 0
+fi
 if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = complete ]; then
   echo "Codex is driving."
   exit 0
@@ -132,7 +144,8 @@ if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = empty ]; then
   echo "Nobody is driving."
   exit 0
 fi
-if [ "$CLAUDE_STATE" = complete ] && { [ "$CODEX_STATE" = complete ] || [ "$CODEX_STATE" = retired ]; }; then
+if { [ "$CLAUDE_STATE" = complete ] || [ "$CLAUDE_STATE" = retired ]; } &&
+   { [ "$CODEX_STATE" = complete ] || [ "$CODEX_STATE" = retired ]; }; then
   echo "Both Claude and Codex packs are installed; the driver is ambiguous."
   exit 1
 fi
