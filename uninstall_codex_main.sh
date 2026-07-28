@@ -2,7 +2,7 @@
 # Remove receipt-backed current or retired Codex-main luna-loop skills.
 set -u
 
-TARGETS="loop loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute opus"
+TARGETS="luna-loop loop loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute opus"
 MARKER=".luna-loop"
 
 path_exists() { [ -e "$1" ] || [ -L "$1" ]; }
@@ -18,7 +18,7 @@ entry_count() {
 }
 
 receipt_text() {
-  printf 'luna-loop-receipt-v2\nmode=codex-main\nskill=%s\nlayout=codex-v1\n' "$1"
+  printf 'luna-loop-receipt-v2\nmode=codex-main\nskill=%s\nlayout=%s\n' "$1" "$2"
 }
 
 owned_target() {
@@ -30,7 +30,8 @@ owned_target() {
   plain_dir "$dir/agents" || return 1
   [ "$(entry_count "$dir/agents")" = 1 ] || return 1
   plain_file "$dir/agents/openai.yaml" || return 1
-  [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text "$skill")" ]
+  [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text "$skill" codex-v2)" ] ||
+    [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text "$skill" codex-v1)" ]
 }
 
 if [ "$#" -ne 0 ]; then

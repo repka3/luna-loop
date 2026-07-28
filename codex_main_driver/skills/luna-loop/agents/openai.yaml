@@ -1,7 +1,7 @@
 interface:
   display_name: "Luna Loop"
   short_description: "Choose the lightest disciplined workflow"
-  default_prompt: "Use $loop to assess this task, recommend the lightest adequate route, and guide it without mandatory phases."
+  default_prompt: "Use $luna-loop to assess this task, recommend the lightest adequate route, and guide it without mandatory phases."
 
 policy:
   allow_implicit_invocation: true

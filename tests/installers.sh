@@ -6,7 +6,8 @@ TEST_DIR="$(cd "$(dirname "$0")" && pwd -P)" || exit 1
 REPO_ROOT="$(cd "$TEST_DIR/.." && pwd -P)" || exit 1
 CLAUDE_TARGETS="luna-loop loop-spec loop-plan loop-review loop-execute codex"
 RETIRED_CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
-CODEX_TARGETS="loop opus"
+CODEX_TARGETS="luna-loop opus"
+RETIRED_ADAPTIVE_CODEX_TARGETS="loop opus"
 PREVIOUS_CODEX_TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
 LEGACY_CODEX_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute opus"
 PASS_COUNT=0
@@ -51,6 +52,10 @@ assert_output() {
   else
     fail "$name (expected '$expected', got '$actual')"
   fi
+}
+
+expected_pack_output() {
+  printf 'Luna Loop Claude pack: %s.\nLuna Loop Codex pack: %s.\n' "$1" "$2"
 }
 
 new_fixture() {
@@ -113,7 +118,7 @@ codex_source_layout_is_exact() {
   local actual
   actual="$(find "$REPO_ROOT/codex_main_driver/skills" \
     -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C sort)"
-  [ "$actual" = "$(printf 'loop\nopus')" ]
+  [ "$actual" = "$(printf 'luna-loop\nopus')" ]
 }
 
 claude_source_layout_is_exact() {
@@ -125,16 +130,17 @@ claude_source_layout_is_exact() {
 
 printf 'fixtures are retained under /tmp/luna-loop-test.* for inspection\n'
 
-assert_true "Codex source pack has exactly loop and opus" codex_source_layout_is_exact
+assert_true "Codex source pack has exactly luna-loop and opus" codex_source_layout_is_exact
 assert_true "Claude source pack has exactly the six current skills" claude_source_layout_is_exact
 
 # Empty roots are a determinate state.
 new_fixture
-run_script "$REPO_ROOT/who_is_driving.sh"
+run_script "$REPO_ROOT/whats_installed.sh"
 assert_status "empty inspection succeeds" 0
-assert_output "empty inspection reports nobody" "Nobody is driving."
+assert_output "empty inspection reports both packs independently" \
+  "$(expected_pack_output "not installed" "not installed")"
 
-# Each installer owns only its own pack. Both may coexist, making the driver ambiguous.
+# Each installer owns only its own pack, and both installed is a valid state.
 new_fixture
 mkdir -p "$CASE_HOME/.agents/skills/unrelated" || exit 1
 printf 'keep\n' > "$CASE_HOME/.agents/skills/unrelated/owner.txt" || exit 1
@@ -142,41 +148,44 @@ run_script "$REPO_ROOT/install_claude_main.sh"
 assert_status "Claude install succeeds" 0
 assert_true "Claude receipts are exact" assert_receipts \
   "$CASE_CLAUDE/skills" claude-main claude-v1 $CLAUDE_TARGETS
-run_script "$REPO_ROOT/who_is_driving.sh"
-assert_output "inspection reports Claude" "Claude is driving."
+run_script "$REPO_ROOT/whats_installed.sh"
+assert_output "inspection reports only the Claude pack installed" \
+  "$(expected_pack_output installed "not installed")"
 run_script "$REPO_ROOT/install_claude_main.sh"
 assert_status "Claude reinstall is idempotent" 0
 
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "Codex install succeeds without removing Claude" 0
 assert_true "Codex receipts are exact" assert_receipts \
-  "$CASE_HOME/.agents/skills" codex-main codex-v1 $CODEX_TARGETS
+  "$CASE_HOME/.agents/skills" codex-main codex-v2 $CODEX_TARGETS
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "Codex reinstall is idempotent" 0
 assert_true "Codex install is a byte copy" cmp -s \
-  "$REPO_ROOT/codex_main_driver/skills/loop/SKILL.md" \
-  "$CASE_HOME/.agents/skills/loop/SKILL.md"
+  "$REPO_ROOT/codex_main_driver/skills/luna-loop/SKILL.md" \
+  "$CASE_HOME/.agents/skills/luna-loop/SKILL.md"
 assert_false "retired workflow names are not installed" \
   test -e "$CASE_HOME/.agents/skills/loop-ledger"
 assert_false "retired interview name is not installed" \
   test -e "$CASE_HOME/.agents/skills/loop-interview"
 assert_true "Claude pack remains installed" test -f "$CASE_CLAUDE/skills/loop-spec/SKILL.md"
-run_script "$REPO_ROOT/who_is_driving.sh"
-assert_status "two installed packs are ambiguous" 1
-assert_output "ambiguity is explicit" \
-  "Both Claude and Codex packs are installed; the driver is ambiguous."
+run_script "$REPO_ROOT/whats_installed.sh"
+assert_status "two installed packs are a valid state" 0
+assert_output "inspection reports both packs installed independently" \
+  "$(expected_pack_output installed installed)"
 
 run_script "$REPO_ROOT/uninstall_claude_main.sh"
 assert_status "Claude uninstall succeeds" 0
 assert_false "Claude pack is removed" test -e "$CASE_CLAUDE/skills/loop-spec"
-run_script "$REPO_ROOT/who_is_driving.sh"
-assert_output "inspection reports Codex" "Codex is driving."
+run_script "$REPO_ROOT/whats_installed.sh"
+assert_output "inspection reports only the Codex pack installed" \
+  "$(expected_pack_output "not installed" installed)"
 run_script "$REPO_ROOT/uninstall_codex_main.sh"
 assert_status "Codex uninstall succeeds" 0
-assert_false "Codex pack is removed" test -e "$CASE_HOME/.agents/skills/loop"
+assert_false "Codex pack is removed" test -e "$CASE_HOME/.agents/skills/luna-loop"
 assert_true "unrelated skill survives" test -f "$CASE_HOME/.agents/skills/unrelated/owner.txt"
-run_script "$REPO_ROOT/who_is_driving.sh"
-assert_output "inspection returns to nobody" "Nobody is driving."
+run_script "$REPO_ROOT/whats_installed.sh"
+assert_output "inspection returns to both packs absent" \
+  "$(expected_pack_output "not installed" "not installed")"
 run_script "$REPO_ROOT/uninstall_codex_main.sh"
 assert_status "Codex uninstall is idempotent" 0
 
@@ -189,31 +198,58 @@ assert_status "foreign Codex target blocks install" 1
 assert_true "foreign target survives install refusal" \
   test -f "$CASE_HOME/.agents/skills/loop-plan/KEEP"
 assert_false "refused install creates no partial pack" \
-  test -e "$CASE_HOME/.agents/skills/loop"
+  test -e "$CASE_HOME/.agents/skills/luna-loop"
 run_script "$REPO_ROOT/uninstall_codex_main.sh"
 assert_status "foreign Codex target blocks uninstall" 1
 assert_true "foreign target survives uninstall refusal" \
   test -f "$CASE_HOME/.agents/skills/loop-plan/KEEP"
+run_script "$REPO_ROOT/whats_installed.sh"
+assert_status "foreign managed name makes inspection fail" 1
+assert_output "inspection isolates the inconsistent Codex pack" \
+  "$(expected_pack_output "not installed" "incomplete or modified")"
 
 # Modified receipt-backed content is not silently overwritten or deleted.
 new_fixture
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "modified-layout setup install" 0
-printf 'unexpected\n' > "$CASE_HOME/.agents/skills/loop/EXTRA" || exit 1
+printf 'unexpected\n' > "$CASE_HOME/.agents/skills/luna-loop/EXTRA" || exit 1
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "modified owned target blocks refresh" 1
 run_script "$REPO_ROOT/uninstall_codex_main.sh"
 assert_status "modified owned target blocks uninstall" 1
 assert_true "unexpected content remains untouched" \
-  test -f "$CASE_HOME/.agents/skills/loop/EXTRA"
+  test -f "$CASE_HOME/.agents/skills/luna-loop/EXTRA"
+
+# The Version 4 two-skill Codex pack is detected and removed only by the
+# explicit uninstaller.
+new_fixture
+write_retired_codex_pack "$CASE_HOME/.agents/skills" $RETIRED_ADAPTIVE_CODEX_TARGETS
+run_script "$REPO_ROOT/whats_installed.sh"
+assert_status "Version 4 Codex pack is recognized" 0
+assert_output "Version 4 Codex pack is reported" \
+  "$(expected_pack_output "not installed" "retired; reinstall recommended")"
+run_script "$REPO_ROOT/install_codex_main.sh"
+assert_status "Version 5 installer refuses implicit entry rename" 1
+assert_true "Version 4 entry remains after refusal" \
+  test -f "$CASE_HOME/.agents/skills/loop/SKILL.md"
+assert_false "refused rename creates no Version 5 entry" \
+  test -e "$CASE_HOME/.agents/skills/luna-loop"
+run_script "$REPO_ROOT/uninstall_codex_main.sh"
+assert_status "Codex uninstaller removes Version 4 pack" 0
+run_script "$REPO_ROOT/install_codex_main.sh"
+assert_status "Version 5 pack installs after explicit uninstall" 0
+assert_true "Version 5 pack uses the unified entry name" \
+  test -f "$CASE_HOME/.agents/skills/luna-loop/SKILL.md"
+assert_false "Version 4 entry name stays absent" \
+  test -e "$CASE_HOME/.agents/skills/loop"
 
 # The previous Codex pack is detected and removed only by the explicit uninstaller.
 new_fixture
 write_retired_codex_pack "$CASE_HOME/.agents/skills" $PREVIOUS_CODEX_TARGETS
-run_script "$REPO_ROOT/who_is_driving.sh"
+run_script "$REPO_ROOT/whats_installed.sh"
 assert_status "previous Codex pack is recognized" 0
 assert_output "previous Codex pack is reported" \
-  "Codex is driving with a retired six-skill pack; reinstall is recommended."
+  "$(expected_pack_output "not installed" "retired; reinstall recommended")"
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "current installer refuses implicit retired-name migration" 1
 assert_true "retired pack remains after refusal" \
@@ -223,17 +259,17 @@ assert_status "Codex uninstaller removes retired pack" 0
 run_script "$REPO_ROOT/install_codex_main.sh"
 assert_status "current Codex pack installs after explicit uninstall" 0
 assert_true "current pack replaces retired names" \
-  test -f "$CASE_HOME/.agents/skills/loop/SKILL.md"
+  test -f "$CASE_HOME/.agents/skills/luna-loop/SKILL.md"
 assert_false "retired ledger name stays absent" \
   test -e "$CASE_HOME/.agents/skills/loop-ledger"
 
 # The oldest Codex six-skill pack remains detectable and removable.
 new_fixture
 write_retired_codex_pack "$CASE_HOME/.agents/skills" $LEGACY_CODEX_TARGETS
-run_script "$REPO_ROOT/who_is_driving.sh"
+run_script "$REPO_ROOT/whats_installed.sh"
 assert_status "oldest Codex pack is recognized" 0
 assert_output "oldest Codex pack is reported" \
-  "Codex is driving with a retired six-skill pack; reinstall is recommended."
+  "$(expected_pack_output "not installed" "retired; reinstall recommended")"
 run_script "$REPO_ROOT/uninstall_codex_main.sh"
 assert_status "Codex uninstaller removes oldest pack" 0
 assert_false "oldest spec name is removed" \
@@ -242,10 +278,10 @@ assert_false "oldest spec name is removed" \
 # The retired Claude six-skill pack is detected and removed only by the explicit uninstaller.
 new_fixture
 write_retired_claude_pack "$CASE_CLAUDE/skills" $RETIRED_CLAUDE_TARGETS
-run_script "$REPO_ROOT/who_is_driving.sh"
+run_script "$REPO_ROOT/whats_installed.sh"
 assert_status "retired Claude pack is recognized" 0
 assert_output "retired Claude pack is reported" \
-  "Claude is driving with a retired six-skill pack; reinstall is recommended."
+  "$(expected_pack_output "retired; reinstall recommended" "not installed")"
 run_script "$REPO_ROOT/install_claude_main.sh"
 assert_status "Claude installer refuses implicit retired-name migration" 1
 assert_true "retired Claude pack remains after refusal" \
@@ -283,7 +319,7 @@ assert_true "symlink destination remains untouched" test -f "$FIXTURE_ROOT/outsi
 # Public arguments are unambiguous.
 new_fixture
 for script in install_claude_main.sh uninstall_claude_main.sh \
-  install_codex_main.sh uninstall_codex_main.sh who_is_driving.sh; do
+  install_codex_main.sh uninstall_codex_main.sh whats_installed.sh; do
   run_script "$REPO_ROOT/$script" unexpected
   assert_status "$script rejects arguments" 64
 done

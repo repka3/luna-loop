@@ -1,6 +1,6 @@
 ---
-name: loop
-description: "Run the adaptive Luna Loop for disciplined software work without mandatory phases. Use when the user invokes $loop, says Luna Loop or use the loop, or otherwise explicitly asks for the Luna Loop workflow to guide architectural discussion, durable decisions, a falsifiable design contract, implementation planning, direct implementation, verification, or optional Opus challenge. Recommend the lightest adequate route and never treat loop invocation alone as authorization to implement."
+name: luna-loop
+description: "Run the adaptive Luna Loop for disciplined software work without mandatory phases. Use when the user invokes $luna-loop, says Luna Loop or use the loop, or otherwise explicitly asks for the Luna Loop workflow to guide architectural discussion, durable decisions, a falsifiable design contract, implementation planning, direct implementation, verification, or optional Opus challenge. Recommend the lightest adequate route and never treat loop invocation alone as authorization to implement."
 ---
 
 # Luna Loop

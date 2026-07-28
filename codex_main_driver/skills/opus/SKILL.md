@@ -52,7 +52,7 @@ claude -p \
 
 ## Use the result
 
-- **Review** — return numbered findings classified as blocker, major, minor, or nitpick, with exact references, realistic reachability, concrete impact, uncertainty, and the smallest supported correction for `$loop` or the driver to triage.
+- **Review** — return numbered findings classified as blocker, major, minor, or nitpick, with exact references, realistic reachability, concrete impact, uncertainty, and the smallest supported correction for `$luna-loop` or the driver to triage.
 - **Research** — require direct sources, dates, uncertainty, alternatives, and conflicting evidence; independently verify material claims before deciding.
 - **Second opinion** — state the question neutrally and compare the result against primary evidence rather than accepting it by model identity.
 

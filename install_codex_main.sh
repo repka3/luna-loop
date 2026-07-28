@@ -2,9 +2,11 @@
 # Install or refresh only the Codex-main luna-loop pack.
 set -u
 
-TARGETS="loop opus"
-RETIRED_TARGETS="loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute"
+TARGETS="luna-loop opus"
+RETIRED_TARGETS="loop loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute"
 MARKER=".luna-loop"
+CURRENT_LAYOUT="codex-v2"
+RETIRED_LAYOUT="codex-v1"
 
 fail() {
   echo "luna-loop: $*" >&2
@@ -24,11 +26,11 @@ entry_count() {
 }
 
 receipt_text() {
-  printf 'luna-loop-receipt-v2\nmode=codex-main\nskill=%s\nlayout=codex-v1\n' "$1"
+  printf 'luna-loop-receipt-v2\nmode=codex-main\nskill=%s\nlayout=%s\n' "$1" "$2"
 }
 
 owned_target() {
-  local dir="$1" skill="$2"
+  local dir="$1" skill="$2" layout="$3"
   plain_dir "$dir" || return 1
   [ "$(entry_count "$dir")" = 3 ] || return 1
   plain_file "$dir/SKILL.md" || return 1
@@ -36,7 +38,7 @@ owned_target() {
   plain_dir "$dir/agents" || return 1
   [ "$(entry_count "$dir/agents")" = 1 ] || return 1
   plain_file "$dir/agents/openai.yaml" || return 1
-  [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text "$skill")" ]
+  [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text "$skill" "$layout")" ]
 }
 
 if [ "$#" -ne 0 ]; then
@@ -63,11 +65,12 @@ for checked in "$AGENTS_ROOT" "$SKILLS_ROOT"; do
   fi
 done
 
-# Moving from either retired six-skill pack is explicit: uninstall it first.
+# Moving from the Version 4 two-skill pack or either retired six-skill pack
+# is explicit: uninstall it first.
 for skill in $RETIRED_TARGETS; do
   destination="$SKILLS_ROOT/$skill"
   if path_exists "$destination"; then
-    if owned_target "$destination" "$skill"; then
+    if owned_target "$destination" "$skill" "$RETIRED_LAYOUT"; then
       echo "luna-loop: retired Codex skill detected: $destination" >&2
       echo "Run ./uninstall_codex_main.sh, then rerun this installer." >&2
       exit 1
@@ -90,7 +93,7 @@ for skill in $TARGETS; do
     || fail "Source skill name does not match directory: $source_dir"
 
   destination="$SKILLS_ROOT/$skill"
-  if path_exists "$destination" && ! owned_target "$destination" "$skill"; then
+  if path_exists "$destination" && ! owned_target "$destination" "$skill" "$CURRENT_LAYOUT"; then
     echo "luna-loop: refusing foreign or modified destination: $destination" >&2
     exit 1
   fi
@@ -113,9 +116,10 @@ for skill in $TARGETS; do
     || fail "Cannot install $skill"
   cp "$SOURCE_ROOT/$skill/agents/openai.yaml" "$destination/agents/openai.yaml" \
     || fail "Cannot install $skill metadata"
-  receipt_text "$skill" > "$destination/$MARKER" \
+  receipt_text "$skill" "$CURRENT_LAYOUT" > "$destination/$MARKER" \
     || fail "Cannot write ownership receipt for $skill"
-  owned_target "$destination" "$skill" || fail "Installed skill did not validate: $destination"
+  owned_target "$destination" "$skill" "$CURRENT_LAYOUT" \
+    || fail "Installed skill did not validate: $destination"
 done
 
 echo "Codex-main luna-loop pack installed in $SKILLS_ROOT"

@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# Best-effort, read-only inspection of installed luna-loop packs.
+# Best-effort, read-only inspection of installed Luna Loop packs.
 set -u
 
 MARKER=".luna-loop"
 CLAUDE_TARGETS="luna-loop loop-spec loop-plan loop-review loop-execute codex"
 RETIRED_CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
 CLAUDE_MANAGED_TARGETS="luna-loop loop-interview loop-spec loop-plan loop-review loop-execute codex"
-CODEX_TARGETS="loop opus"
+CODEX_TARGETS="luna-loop opus"
+RETIRED_ADAPTIVE_CODEX_TARGETS="loop opus"
 PREVIOUS_CODEX_TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
 LEGACY_CODEX_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute opus"
-CODEX_MANAGED_TARGETS="loop loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute opus"
+CODEX_MANAGED_TARGETS="luna-loop loop loop-ledger loop-behavior loop-interview loop-spec loop-plan loop-review loop-execute opus"
 
 if [ "$#" -ne 0 ]; then
-  echo "usage: ./who_is_driving.sh" >&2
+  echo "usage: ./whats_installed.sh" >&2
   exit 64
 fi
 
@@ -44,7 +45,7 @@ claude_target_valid() {
 }
 
 codex_target_valid() {
-  local dir="$1" skill="$2"
+  local dir="$1" skill="$2" layout="$3"
   plain_dir "$dir" || return 1
   [ "$(entry_count "$dir")" = 3 ] || return 1
   plain_file "$dir/SKILL.md" || return 1
@@ -52,7 +53,7 @@ codex_target_valid() {
   plain_dir "$dir/agents" || return 1
   [ "$(entry_count "$dir/agents")" = 1 ] || return 1
   plain_file "$dir/agents/openai.yaml" || return 1
-  [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text codex-main "$skill" codex-v1)" ]
+  [ "$(cat "$dir/$MARKER" 2>/dev/null)" = "$(receipt_text codex-main "$skill" "$layout")" ]
 }
 
 claude_set_complete() {
@@ -84,9 +85,9 @@ claude_state() {
 }
 
 codex_set_complete() {
-  local root="$1" targets="$2" skill
+  local root="$1" targets="$2" layout="$3" skill
   for skill in $targets; do
-    codex_target_valid "$root/$skill" "$skill" || return 1
+    codex_target_valid "$root/$skill" "$skill" "$layout" || return 1
   done
 }
 
@@ -102,11 +103,16 @@ codex_state() {
   done
   if [ "$seen" -eq 0 ]; then
     printf '%s\n' empty
-  elif [ "$seen" -eq 2 ] && codex_set_complete "$root" "$CODEX_TARGETS"; then
+  elif [ "$seen" -eq 2 ] && codex_set_complete "$root" "$CODEX_TARGETS" codex-v2; then
     printf '%s\n' complete
-  elif [ "$seen" -eq 6 ] && codex_set_complete "$root" "$PREVIOUS_CODEX_TARGETS"; then
+  elif [ "$seen" -eq 2 ] &&
+       codex_set_complete "$root" "$RETIRED_ADAPTIVE_CODEX_TARGETS" codex-v1; then
     printf '%s\n' retired
-  elif [ "$seen" -eq 6 ] && codex_set_complete "$root" "$LEGACY_CODEX_TARGETS"; then
+  elif [ "$seen" -eq 6 ] &&
+       codex_set_complete "$root" "$PREVIOUS_CODEX_TARGETS" codex-v1; then
+    printf '%s\n' retired
+  elif [ "$seen" -eq 6 ] &&
+       codex_set_complete "$root" "$LEGACY_CODEX_TARGETS" codex-v1; then
     printf '%s\n' retired
   else
     printf '%s\n' inconsistent
@@ -124,32 +130,28 @@ CODEX_ROOT="$HOME/.agents/skills"
 CLAUDE_STATE="$(claude_state "$CLAUDE_ROOT")"
 CODEX_STATE="$(codex_state "$CODEX_ROOT")"
 
-if [ "$CLAUDE_STATE" = complete ] && [ "$CODEX_STATE" = empty ]; then
-  echo "Claude is driving."
-  exit 0
-fi
-if [ "$CLAUDE_STATE" = retired ] && [ "$CODEX_STATE" = empty ]; then
-  echo "Claude is driving with a retired six-skill pack; reinstall is recommended."
-  exit 0
-fi
-if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = complete ]; then
-  echo "Codex is driving."
-  exit 0
-fi
-if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = retired ]; then
-  echo "Codex is driving with a retired six-skill pack; reinstall is recommended."
-  exit 0
-fi
-if [ "$CLAUDE_STATE" = empty ] && [ "$CODEX_STATE" = empty ]; then
-  echo "Nobody is driving."
-  exit 0
-fi
-if { [ "$CLAUDE_STATE" = complete ] || [ "$CLAUDE_STATE" = retired ]; } &&
-   { [ "$CODEX_STATE" = complete ] || [ "$CODEX_STATE" = retired ]; }; then
-  echo "Both Claude and Codex packs are installed; the driver is ambiguous."
+report_pack() {
+  local label="$1" state="$2"
+  case "$state" in
+    complete)
+      printf 'Luna Loop %s pack: installed.\n' "$label"
+      ;;
+    retired)
+      printf 'Luna Loop %s pack: retired; reinstall recommended.\n' "$label"
+      ;;
+    empty)
+      printf 'Luna Loop %s pack: not installed.\n' "$label"
+      ;;
+    inconsistent)
+      printf 'Luna Loop %s pack: incomplete or modified.\n' "$label"
+      ;;
+  esac
+}
+
+report_pack Claude "$CLAUDE_STATE"
+report_pack Codex "$CODEX_STATE"
+
+if [ "$CLAUDE_STATE" = inconsistent ] || [ "$CODEX_STATE" = inconsistent ]; then
   exit 1
 fi
-
-echo "Luna-loop installation is incomplete or modified."
-echo "Claude pack: $CLAUDE_STATE; Codex pack: $CODEX_STATE." >&2
-exit 1
+exit 0
