@@ -86,7 +86,7 @@ Codex-main installs two skills from `codex_main_driver/skills/`:
 - **luna-loop** — chooses the lightest disciplined route through evidence gathering, architectural discussion, durable decisions, a falsifiable design contract, implementation planning, direct implementation, and verification.
 - **opus** — dispatches a fresh read-only, web-enabled Opus session for review, research, or a second opinion.
 
-Invoke `$luna-loop`, say `Luna Loop`, or ask to `use the loop`. Codex inspects read-only context, recommends a route, and asks for confirmation when the route is not already explicit. `$opus` remains explicitly authorized because every dispatch is billable.
+Invoke `$luna-loop`, say `Luna Loop`, or ask to `use the loop`. Codex inspects read-only context, recommends a route, and asks for confirmation when the route is not already explicit. Invoke `$opus` or explicitly ask Opus for a review, research pass, or second opinion. Every Opus dispatch is billable, so Luna Loop asks before calling it unless the user already requested Opus or granted blanket permission for the current loop.
 
 The lightest adequate route wins:
 

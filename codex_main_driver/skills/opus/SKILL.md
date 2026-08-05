@@ -1,6 +1,6 @@
 ---
 name: opus
-description: "Dispatch a fresh read-only, web-enabled Opus session for independent review, research, or a second opinion. Invoke $opus explicitly because calls are billable; it never implements changes and no workflow phase requires it automatically."
+description: "Dispatch a fresh read-only, web-enabled Opus session when the user invokes $opus or explicitly asks Opus for an independent review, research pass, or second opinion. Calls are billable; it never implements changes and no workflow phase requires it automatically."
 ---
 
 # Opus Dispatch

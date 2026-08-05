@@ -4,4 +4,4 @@ interface:
   default_prompt: "Use $opus for an independent read-only review, research pass, or second opinion."
 
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true
