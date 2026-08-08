@@ -2,8 +2,8 @@
 # Install or refresh only the Claude-main luna-loop pack.
 set -u
 
-TARGETS="luna-loop loop-spec loop-plan loop-review loop-execute codex"
-RETIRED_TARGETS="loop-interview"
+TARGETS="luna-loop codex"
+RETIRED_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute"
 MARKER=".luna-loop"
 
 fail() {
@@ -58,7 +58,7 @@ if path_exists "$SKILLS_ROOT" && ! plain_dir "$SKILLS_ROOT"; then
   fail "Claude skills root is not an ordinary directory: $SKILLS_ROOT"
 fi
 
-# Moving from the retired six-skill pack is explicit: uninstall it first.
+# Moving from a retired multi-skill pack is explicit: uninstall it first.
 for skill in $RETIRED_TARGETS; do
   destination="$SKILLS_ROOT/$skill"
   if path_exists "$destination"; then

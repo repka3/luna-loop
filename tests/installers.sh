@@ -4,8 +4,9 @@ set -u
 
 TEST_DIR="$(cd "$(dirname "$0")" && pwd -P)" || exit 1
 REPO_ROOT="$(cd "$TEST_DIR/.." && pwd -P)" || exit 1
-CLAUDE_TARGETS="luna-loop loop-spec loop-plan loop-review loop-execute codex"
-RETIRED_CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
+CLAUDE_TARGETS="luna-loop codex"
+PREVIOUS_CLAUDE_TARGETS="luna-loop loop-spec loop-plan loop-review loop-execute codex"
+LEGACY_CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
 CODEX_TARGETS="luna-loop opus"
 RETIRED_ADAPTIVE_CODEX_TARGETS="loop opus"
 PREVIOUS_CODEX_TARGETS="loop-ledger loop-behavior loop-plan loop-review loop-execute opus"
@@ -125,13 +126,13 @@ claude_source_layout_is_exact() {
   local actual
   actual="$(find "$REPO_ROOT/claude_main_driver/skills" \
     -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C sort)"
-  [ "$actual" = "$(printf 'codex\nloop-execute\nloop-plan\nloop-review\nloop-spec\nluna-loop')" ]
+  [ "$actual" = "$(printf 'codex\nluna-loop')" ]
 }
 
 printf 'fixtures are retained under /tmp/luna-loop-test.* for inspection\n'
 
 assert_true "Codex source pack has exactly luna-loop and opus" codex_source_layout_is_exact
-assert_true "Claude source pack has exactly the six current skills" claude_source_layout_is_exact
+assert_true "Claude source pack has exactly luna-loop and codex" claude_source_layout_is_exact
 
 # Empty roots are a determinate state.
 new_fixture
@@ -167,7 +168,7 @@ assert_false "retired workflow names are not installed" \
   test -e "$CASE_HOME/.agents/skills/loop-ledger"
 assert_false "retired interview name is not installed" \
   test -e "$CASE_HOME/.agents/skills/loop-interview"
-assert_true "Claude pack remains installed" test -f "$CASE_CLAUDE/skills/loop-spec/SKILL.md"
+assert_true "Claude pack remains installed" test -f "$CASE_CLAUDE/skills/luna-loop/SKILL.md"
 run_script "$REPO_ROOT/whats_installed.sh"
 assert_status "two installed packs are a valid state" 0
 assert_output "inspection reports both packs installed independently" \
@@ -175,7 +176,7 @@ assert_output "inspection reports both packs installed independently" \
 
 run_script "$REPO_ROOT/uninstall_claude_main.sh"
 assert_status "Claude uninstall succeeds" 0
-assert_false "Claude pack is removed" test -e "$CASE_CLAUDE/skills/loop-spec"
+assert_false "Claude pack is removed" test -e "$CASE_CLAUDE/skills/luna-loop"
 run_script "$REPO_ROOT/whats_installed.sh"
 assert_output "inspection reports only the Codex pack installed" \
   "$(expected_pack_output "not installed" installed)"
@@ -275,23 +276,44 @@ assert_status "Codex uninstaller removes oldest pack" 0
 assert_false "oldest spec name is removed" \
   test -e "$CASE_HOME/.agents/skills/loop-spec"
 
-# The retired Claude six-skill pack is detected and removed only by the explicit uninstaller.
+# The previous Claude six-skill pack is detected and removed only by the
+# explicit uninstaller.
 new_fixture
-write_retired_claude_pack "$CASE_CLAUDE/skills" $RETIRED_CLAUDE_TARGETS
+write_retired_claude_pack "$CASE_CLAUDE/skills" $PREVIOUS_CLAUDE_TARGETS
 run_script "$REPO_ROOT/whats_installed.sh"
-assert_status "retired Claude pack is recognized" 0
-assert_output "retired Claude pack is reported" \
+assert_status "previous Claude pack is recognized" 0
+assert_output "previous Claude pack is reported" \
+  "$(expected_pack_output "retired; reinstall recommended" "not installed")"
+run_script "$REPO_ROOT/install_claude_main.sh"
+assert_status "Claude installer refuses implicit previous-pack migration" 1
+assert_true "previous Claude pack remains after refusal" \
+  test -f "$CASE_CLAUDE/skills/loop-spec/SKILL.md"
+run_script "$REPO_ROOT/uninstall_claude_main.sh"
+assert_status "Claude uninstaller removes previous pack" 0
+run_script "$REPO_ROOT/install_claude_main.sh"
+assert_status "current Claude pack installs after explicit uninstall" 0
+assert_true "current pack keeps the luna-loop entry" \
+  test -f "$CASE_CLAUDE/skills/luna-loop/SKILL.md"
+assert_false "previous spec name stays absent" \
+  test -e "$CASE_CLAUDE/skills/loop-spec"
+
+# The oldest Claude six-skill pack is detected and removed only by the explicit uninstaller.
+new_fixture
+write_retired_claude_pack "$CASE_CLAUDE/skills" $LEGACY_CLAUDE_TARGETS
+run_script "$REPO_ROOT/whats_installed.sh"
+assert_status "oldest Claude pack is recognized" 0
+assert_output "oldest Claude pack is reported" \
   "$(expected_pack_output "retired; reinstall recommended" "not installed")"
 run_script "$REPO_ROOT/install_claude_main.sh"
 assert_status "Claude installer refuses implicit retired-name migration" 1
-assert_true "retired Claude pack remains after refusal" \
+assert_true "oldest Claude pack remains after refusal" \
   test -f "$CASE_CLAUDE/skills/loop-interview/SKILL.md"
 assert_false "refused Claude install creates no entry skill" \
   test -e "$CASE_CLAUDE/skills/luna-loop"
 run_script "$REPO_ROOT/uninstall_claude_main.sh"
-assert_status "Claude uninstaller removes retired pack" 0
+assert_status "Claude uninstaller removes oldest pack" 0
 run_script "$REPO_ROOT/install_claude_main.sh"
-assert_status "current Claude pack installs after explicit uninstall" 0
+assert_status "current Claude pack installs after oldest-pack uninstall" 0
 assert_true "current pack includes the luna-loop entry" \
   test -f "$CASE_CLAUDE/skills/luna-loop/SKILL.md"
 assert_false "retired interview name stays absent" \
@@ -303,7 +325,7 @@ CASE_CLAUDE="$FIXTURE_ROOT/custom-claude"
 mkdir "$CASE_CLAUDE" || exit 1
 run_script "$REPO_ROOT/install_claude_main.sh"
 assert_status "custom Claude root is supported" 0
-: > "$CASE_CLAUDE/skills/loop-spec/.luna-loop"
+: > "$CASE_CLAUDE/skills/luna-loop/.luna-loop"
 run_script "$REPO_ROOT/uninstall_claude_main.sh"
 assert_status "legacy empty Claude receipt can be uninstalled" 0
 

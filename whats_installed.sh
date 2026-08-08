@@ -3,8 +3,9 @@
 set -u
 
 MARKER=".luna-loop"
-CLAUDE_TARGETS="luna-loop loop-spec loop-plan loop-review loop-execute codex"
-RETIRED_CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
+CLAUDE_TARGETS="luna-loop codex"
+PREVIOUS_CLAUDE_TARGETS="luna-loop loop-spec loop-plan loop-review loop-execute codex"
+LEGACY_CLAUDE_TARGETS="loop-interview loop-spec loop-plan loop-review loop-execute codex"
 CLAUDE_MANAGED_TARGETS="luna-loop loop-interview loop-spec loop-plan loop-review loop-execute codex"
 CODEX_TARGETS="luna-loop opus"
 RETIRED_ADAPTIVE_CODEX_TARGETS="loop opus"
@@ -75,9 +76,11 @@ claude_state() {
   done
   if [ "$seen" -eq 0 ]; then
     printf '%s\n' empty
-  elif [ "$seen" -eq 6 ] && claude_set_complete "$root" "$CLAUDE_TARGETS"; then
+  elif [ "$seen" -eq 2 ] && claude_set_complete "$root" "$CLAUDE_TARGETS"; then
     printf '%s\n' complete
-  elif [ "$seen" -eq 6 ] && claude_set_complete "$root" "$RETIRED_CLAUDE_TARGETS"; then
+  elif [ "$seen" -eq 6 ] && claude_set_complete "$root" "$PREVIOUS_CLAUDE_TARGETS"; then
+    printf '%s\n' retired
+  elif [ "$seen" -eq 6 ] && claude_set_complete "$root" "$LEGACY_CLAUDE_TARGETS"; then
     printf '%s\n' retired
   else
     printf '%s\n' inconsistent

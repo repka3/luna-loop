@@ -1,148 +1,128 @@
 ---
 name: luna-loop
-description: "Adaptive entry to the Luna Loop with Claude driving: interview discipline, lightest-adequate-route selection, evidence rules, non-cascading authorization. Use when the user invokes the loop, says Luna Loop, or asks for the loop workflow. Invocation alone never authorizes implementation."
+description: "The Luna Loop with Claude driving: scale the process to the request — direct work, plan-only, or the whole circus (decision ledger → falsifiable plan with grilling → gated dog execution). Use when the user invokes the loop, says Luna Loop, or asks for the loop workflow. Invocation alone never authorizes implementation."
 ---
 
-# luna-loop — the adaptive entry
+# luna-loop — one process, weighted by the situation
 
-One workflow, no mandatory phases. Every control below exists to stop a real
-failure mode; apply the ones the work in front of you actually needs, and
-never produce a note, spec, plan, review, or dispatch merely because another
-one occurred. Skipping a document never permits skipping the reasoning it
-would have protected.
+No fixed phases. Read the request, the repo guidance, and enough code to judge
+the work — stay read-only while judging — then match the weight:
 
-## Enter deliberately
+    trivial and settled ("swap those two buttons")     → just do it, verify
+    settled, but execution needs durable precision     → plan → execute
+    hard system work, unsettled decisions, or the
+    user calls "the whole circus"                      → ledger → plan (grill) → execute
 
-Read the request, repository guidance, existing artifacts, and enough code to
-assess the work. Stay read-only while choosing a route.
+When the user picked the route, follow it. Otherwise recommend the lightest
+adequate one, with the reason, and confirm before creating artifacts. Rigor
+rises with uncertainty, blast radius, irreversibility, cost, and security
+exposure — never with ceremony. No artifact exists merely because another
+one does.
 
-When the user already picked a route, follow it. Otherwise recommend the
-lightest adequate route with a concrete reason and ask for confirmation
-before creating workflow artifacts.
+Documents are datetime-prefixed, minute precision:
+`docs/ledgers/YYYY-MM-DD-HHMM-<topic>.md`, `docs/plans/YYYY-MM-DD-HHMM-<topic>.md`.
 
-Route confirmation authorizes the agreed artifacts. It never authorizes
-implementation — that takes an explicit go-word ("go", "build it") after the
-scope is settled. Tentative language — "I think", "maybe", "what if",
-"probably" — is discussion: investigate, challenge, recommend; do not mutate
-while the user is considering an idea.
+## The ledger
 
-## The routes
+The only pre-plan artifact: the running log of decisions for a problem, one
+entry per decision with its why. It is updated step by step as we decide —
+it starts sparse and grows; early fuzzy thinking is just an early ledger.
+It cannot predict the future and does not have to: the grill below exists
+to catch what it missed.
 
-    small, settled, and local            → implement directly, verify
-    settled, needs durable sequencing    → plan → dispatch → verify
-    decisions unsettled                  → interview → one of the above
-    multiple compliant designs remain    → interview → spec → plan → …
-    hard system work                     → interview → spec → gate → plan
-                                              → gate → dispatch → verify
+## The plan
 
-These are examples, not phases. Increase rigor with uncertainty, blast
-radius, irreversibility, cost, security exposure, and the number of people
-affected.
+Falsifiable, or it is not a plan. The bar: two different executors, given
+this plan, produce roughly the same implementation. That means what, where,
+how, and what-not — exact files, exact interfaces, contracts verbatim,
+verify commands that would actually fail on a wrong implementation. Never
+spec-generalities: "we do not log caller data" admits a hundred compliant
+implementations and forbids none of the wrong ones.
 
-The execution line: work that needs no plan, the driver implements and
-verifies in place. Work that earns a plan is dispatched cold per
-`loop-execute` — the plan format exists to be extracted, and the cold
-executor's STOP rule is part of what a plan buys.
+Shape — each task is a future cold dispatch:
 
-A document is settled when the user says so. A blind review round
-(`loop-review`) is how to buy independent scrutiny for that call when the
-stakes justify its cost — never a mandatory toll, and a clean review is
-never the convergence condition.
+- **Header:** the goal in one sentence, then **Global Constraints** — every
+  rule, schema, and exact string more than one task consumes. Extraction
+  contract: a dispatch promptfile is the Global Constraints verbatim plus
+  the one task, nothing else. Anything not in the promptfile or on disk
+  does not exist for the executor.
+- **Per task:** Files (exact paths — Create / Modify / Test) · Interfaces
+  (Consumes / Produces with exact signatures — how a task learns what its
+  neighbors expect) · Contracts copied in verbatim, not referenced · Verify
+  (exact commands with expected outcomes) · and the STOP rule: "if this
+  plan and reality disagree in a way this scope cannot absorb, stop and
+  report instead of improvising."
+- **No placeholders** — "TBD", "appropriate error handling", "similar to
+  task N", elided schemas. Executor-facing text is self-contained: zero
+  skill references, zero conversation references.
+- **Reality scan before execution:** `rg` / `ls` every path, symbol, and
+  precondition the plan names — and every surface it changes, for consumers
+  the file list missed — against the actual repo.
 
-Controls and their owners:
+## The grill — how ledger and plan stay one thing
 
-- **interview** — this skill, below: unsettled decisions.
-- **note** — `docs/notes/YYYY-MM-DD-HHMM-<topic>.md`: too fuzzy to spec, or
-  durable research evidence.
-- **spec** — `loop-spec`: materially different behaviors could all comply
-  with what is settled, or a gate needs a Trust Boundary to triage against.
-- **plan** — `loop-plan`: execution will be dispatched cold, or sequencing
-  needs durable precision.
-- **gate** — `loop-review`: independent blind review; billable, explicit
-  user request only.
-- **execution** — `loop-execute`: a settled plan, on the user's go-word.
-- **mechanics** — `codex`: how to call the other model safely and cheaply.
+The failure this section exists to kill: while writing the plan, hitting
+something the ledger does not settle and silently deciding "not clear —
+I'm going with this." From that moment the plan is no longer based on the
+ledger, and nobody knows until it hurts.
 
-## The interview
+- Every point the ledger under-determines is a question to the user. No
+  exception for "small," no exception for "obvious to me."
+- Every question carries a recommendation, and a bit of back-and-forth is
+  the normal cost of a real decision.
+- The bar is question quality, not question count. The goal is not few
+  questions — it is no dumb ones ("do you agree we should not wipe the
+  database?"). Genuinely unclear or genuinely in doubt: ask. Pure
+  implementation detail: settle it yourself and say so, so it can be vetoed.
+- Every answer is folded back into the ledger before the plan builds on it.
+  Ledger and plan never diverge; if they ever do, that is a stop, not a
+  judgment call.
 
-A dialogue, not a questionnaire.
+## Execution — the dog on a leash
 
-- **One decision per message.** Every fact in the message earns its place by
-  serving that one decision. What overwhelms people is never fact density —
-  it is unfocused scope.
-- **An option is a claim.** Never offer an option that ten seconds of
-  checking would collapse — read the source, count the bytes, run the probe
-  first, and bring the settled answer instead of the menu. The option you
-  recommend carries the *highest* verification bar, not the lowest:
-  recommendations anchor, so an unchecked recommendation is worse than an
-  unchecked option.
-- **If it exists, it has receipts.** When the idea concerns the behavior of
-  anything that already runs — your system or a dependency — claims get
-  receipts (file:line, probe output) before decisions build on them; when
-  the work starts from a symptom, the symptom becomes a number first. In a
-  greenfield this rule simply never fires.
-- **Settle implementation details yourself and say so.** Bring the user only
-  decisions that are genuinely theirs; report the ones you settled in
-  passing so they can veto.
-- **Scope check first.** If the request spans multiple independent
-  subsystems, decompose before refining details — don't spend questions
-  polishing a corner of something that needs splitting.
+The dog is codex: it does the actual coding, dispatched cold per the `codex`
+skill's executor shape, one task per dispatch. Execution starts on the
+user's go-word — a finished plan is never the trigger — and the go-word
+authorizes the run: dispatch → verify → commit → next.
 
-Two exits: spec-ready decisions go to `loop-spec`; too big or fuzzy to spec
-becomes a note — direction statements, `[x]`/`[ ]` roadmap checkboxes for
-goals too fuzzy to spec, research findings gathered mid-interview. No
-template beyond the timestamped filename.
+- **One task in flight, ever.** Task N is verified and committed green
+  before N+1 dispatches, so every dispatch lands on a verified tree and a
+  bug's suspect is one task's diff.
+- **Review every task yourself.** Read the diff hunk by hunk against the
+  task; run its Verify commands and the project suite. The dog's summary is
+  a claim, not evidence — verify hardest whatever it says it could not run.
+  A suspected flake gets a cause and 3 consecutive greens, not a shrug.
+- **The smell rule.** Out of scope, a change beyond the task's boundary,
+  the dog went wild — stop and bring the user the problem with the
+  evidence; they decide. This is rare: absent a smell, run through to the
+  end, or until something genuinely needs their attention.
+- **An executor STOP is a plan bug found cheaply.** Diagnose against
+  reality yourself, amend the plan — it stays the single source of truth —
+  fold the amendment into the ledger if it touches a decision, commit the
+  amendment, dispatch fresh (never resume).
+- **Commit per green task**, message carrying the why. Non-git projects
+  have no commit boundary: verify manually and say so plainly.
 
-## Evidence
+## Review on request
 
-Do not debate a fact that can be measured. Distinguish, out loud:
+On the user's explicit ask — never as a standing toll — a ledger or plan
+can go to codex for a cold review: read-only shape per the `codex` skill,
+findings verified one by one, then triaged fold / Jupiter alignment / out
+of scope. Folds land directly in the document. There are no review-ledger
+files.
 
-- **observed** — cited file:line, command output, test, log, measurement;
-- **inferred** — concluded from observations, with the reasoning stated;
-- **unknown** — not established, with the next probe named;
-- **chosen** — an owner decision evidence alone cannot settle.
+## Evidence and authority
 
-Resolve discoverable engineering facts before asking the user. When a probe
-needs credentials, new tooling, cost, external access, or any mutation
-beyond current authority, propose the exact probe and wait. A decision that
-cannot wait for evidence gets a labeled assumption, the safest reversible
-choice, and the observation that will confirm or reopen it — never a guess
-dressed as fact.
+- Distinguish out loud: **observed** (file:line, command output) /
+  **inferred** (with the reasoning) / **unknown** (with the next probe) /
+  **chosen** (the user's call). Never debate what can be measured; never
+  present a guess as a fact.
+- Authorization does not cascade: a ledger does not approve a plan; a plan
+  does not authorize execution; the run's go-word covers per-task commits
+  and nothing further — push, release, and deploy are each their own ask.
+- When artifacts disagree: the user's latest explicit correction wins, then
+  the ledger, then the plan. Reconcile the documents or stop for the user's
+  decision — never improvise past a conflict.
 
-## Direct work stays disciplined
-
-Before implementing directly, all of these hold:
-
-- the exact intended change and its boundary, with explicit non-goals;
-- no unresolved decision that could materially change the result;
-- verification that would actually expose a wrong implementation;
-- explicit authorization to modify the project.
-
-If one is materially unclear, stop and recommend the lightest missing
-control. Never silently turn a local request into a new subsystem,
-dependency, storage model, public interface, or migration — report the
-evidence, offer the smallest viable routes, and wait for the owner's pick.
-
-Authorization does not cascade:
-
-1. a hypothesis does not settle a decision;
-2. a settled decision does not approve a spec or plan;
-3. a spec or plan does not authorize implementation;
-4. implementation authorization does not authorize a commit;
-5. commit authorization does not authorize a push;
-6. a push does not authorize a build, publication, release, or deployment.
-
-One instruction may authorize several steps only when it names them and
-their material targets. Otherwise stop at the last authorized boundary —
-silence is not approval. Focused tests and project builds needed to verify
-an authorized change stay in scope.
-
-## Authority and finish
-
-When artifacts disagree, this order wins: the user's latest explicit
-correction, then the settled spec, then the plan, then notes and review
-ledgers. Reconcile the durable artifacts or stop for an owner decision —
-never improvise past a material conflict.
-
-At completion, report the result, changed files, verification evidence, and
-residual risk. No ceremonial final pass is mandatory.
+At the end: what landed, changed files, verification evidence (what review
+caught — the count is signal, not shame), and residual risk.
