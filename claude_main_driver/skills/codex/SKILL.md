@@ -1,6 +1,6 @@
 ---
 name: codex
-description: "Invoke Codex CLI as reviewer or executor: sandbox table, three call shapes, effort economics, never resume, run handling. Side-effecting and billable — invoke only on explicit user request or when another luna-loop skill directs a dispatch."
+description: "Invoke Codex CLI as reviewer or executor: sandbox table, three call shapes, effort economics, never resume, run handling. Side-effecting and billable — invoke only on explicit user request."
 ---
 
 # codex — dispatch mechanics
