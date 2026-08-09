@@ -103,9 +103,15 @@ These are examples, not mandatory phases. A ledger, contract, plan, or review ex
 
 The loop prefers measured repository and system evidence over confident guesses. It distinguishes observed facts, inferences, unknowns, and owner choices. When evidence cannot be collected within existing authority, Codex proposes the exact probe instead of improvising.
 
+During a decision ledger, Codex verifies the relevant current code, schemas and migrations when applicable, tests, configuration, and governing documentation before recommending an answer. It asks one genuine owner question at a time. If planning exposes an unsettled point, planning stops, Codex inspects the evidence, asks the question with a verified recommendation, records the settled answer in the ledger, and only then resumes. An unverified recommendation is retracted and corrected rather than defended or quietly replaced.
+
+Plans are repository-grounded execution recipes, not generic specifications. Two competent executors given the same plan and repository state should produce substantially the same implementation: exact files, interfaces, state transitions, ordering, failure behavior, and falsifying verification are named wherever they matter. If repository reality contradicts the plan or the mechanism fails, Codex stops and reports the evidence instead of silently redesigning, substituting a workaround, or inventing another workflow.
+
 Authorization does not cascade. Discussion does not authorize implementation; implementation does not authorize commits; commits do not authorize pushes; and none of those authorize image builds, publication, releases, or deployment. One instruction may authorize several actions only when it names them and their material targets clearly.
 
-Opus may challenge discussion, contracts, plans, research, or implementation. Every finding is triaged as fold, cut, or escalate; Opus severity labels are claims, not verdicts. A clean review is never a convergence requirement. The dispatcher uses the supported `opus` alias, `xhigh` effort by default, and a fresh non-persistent session. `max` is used only when the user explicitly requests it.
+Opus may challenge discussion, contracts, plans, research, or implementation. Every finding is a claim that Codex verifies against primary evidence and proposes to the owner as fold, cut, or escalate. Codex explains every material disposition; it does not modify the reviewed subject until the owner accepts the triage unless automatic folding was explicitly authorized for that review. A clean review is never a convergence requirement. The dispatcher uses the supported `opus` alias, `xhigh` effort by default, and a fresh non-persistent session. `max` is used only when the user explicitly requests it.
+
+After compaction, restart, or handoff, Codex reloads the governing project artifacts, current diff and Git state, and relevant code before continuing from the recorded resume point. A chat summary is navigation, not authority.
 
 ## Claude-main: how it works
 

@@ -14,7 +14,7 @@ Every dispatch must:
 - use the supported `opus` model alias;
 - use effort `xhigh`; substitute `max` only on the user's explicit instruction;
 - start a fresh non-persistent print session, never resume or continue;
-- keep normal owner Claude context active;
+- keep the outer Codex session as the context-owning driver;
 - expose only file reading, search, installed skills, and built-in web search/fetch;
 - deny shell, file mutation, agents, Chrome, and MCP tools;
 - keep web available for every review and research call.
@@ -25,7 +25,7 @@ Owner `CLAUDE.md`, skills, plugins, and hooks remain the machine owner's domain.
 
 Create a private session scratch directory with `mktemp -d`. Put the prompt file, raw output, prepared diffs, and external review artifacts there, never in the project. Use the smallest exact `--add-dir` only when Opus must read staged artifacts; never grant all of `/tmp`.
 
-Write a neutral, self-contained prompt. Include the subject, reading order, authority and scope, requested output, and evidence expectations. Do not include conversational advocacy or the driver's conclusion.
+Write a neutral, self-contained prompt. Include the subject, reading order, authority and scope, requested output, and evidence expectations. Require Opus to inspect cited repository evidence directly instead of accepting the reviewed artifact's claims as facts. Do not include conversational advocacy or the driver's conclusion.
 
 ## Call shape
 
@@ -56,4 +56,4 @@ claude -p \
 - **Research** — require direct sources, dates, uncertainty, alternatives, and conflicting evidence; independently verify material claims before deciding.
 - **Second opinion** — state the question neutrally and compare the result against primary evidence rather than accepting it by model identity.
 
-Read the raw output from scratch and distill it into the active context. Never use the absence of findings as a convergence requirement, and never repeat a review merely to make Opus return clean. Delete only the exact scratch directory created for the run. The Opus response and its severity labels remain claims until the driver verifies and triages them.
+Read the raw output from scratch and distill it into the active context. Never use the absence of findings as a convergence requirement, and never repeat a review merely to make Opus return clean. Delete only the exact scratch directory created for the run. The Opus response and its severity labels remain claims until the driver verifies them against primary evidence, proposes a disposition to the owner, and receives the owner's decision under the active workflow.

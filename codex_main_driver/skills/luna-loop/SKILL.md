@@ -54,6 +54,8 @@ Give evidence enough provenance to evaluate it: environment, path or source, com
 
 Resolve discoverable engineering facts before asking the user. When a probe requires credentials, new tooling, cost, external access, production instrumentation, or any mutation outside the already authorized scope, explain the exact probe and wait for approval.
 
+Verify before recommending. In a decision-ledger discussion, inspect the current authoritative code, schemas and migrations when relevant, tests, configuration, and governing documentation before recommending an answer. If the necessary evidence is unavailable, ask a neutral question, name the missing evidence, and do not fill the gap with a plausible-sounding proposal. If an earlier recommendation proves unverified or wrong, retract it explicitly, inspect the implementation, correct the advice, and preserve the correction in the governing ledger when one exists.
+
 When a decision cannot wait for evidence, label the assumption, compare realistic alternatives, choose the safest reversible option within authority, and define the observation that will confirm, roll back, or reopen it. Never disguise a guess as a fact.
 
 Write durable research or measurement evidence to `docs/notes/YYYY-MM-DD-HHMM-<topic>.md` using local time only when later work needs it.
@@ -102,7 +104,9 @@ Keep only useful content:
 - pending evidence with an owner and next probe;
 - the current resume point.
 
-Ask one genuine owner decision at a time and include a recommendation. Persist a decision when it settles; do not preserve exploratory noise as authority. Before pausing or leaving discovery, reconcile the conversation with the ledger.
+Ask one genuine owner decision at a time and include a recommendation grounded in the inspected evidence. Persist a decision when it settles; do not preserve exploratory noise as authority. Before pausing or leaving discovery, reconcile the conversation with the ledger.
+
+Keep the ledger and downstream artifacts synchronized. When contract or plan work exposes a point the ledger does not settle, stop that work, inspect every discoverable fact needed for a recommendation, ask one focused owner question, record the settled answer in the ledger, and only then continue. Do not silently choose an interpretation because planning has already started. Settle pure implementation mechanics yourself only when they do not change behavior or architecture, and make the choice visible so the owner can veto it.
 
 ## Write a falsifiable design contract
 
@@ -133,6 +137,10 @@ Write `docs/plans/YYYY-MM-DD-HHMM-<topic>.md` using local time, or update the ex
 
 Derive the plan from the latest user authority, accepted contract when present, settled ledger decisions, repository guidance, and verified code. Do not invent missing behavior. When no separate contract is useful, put the exact behavioral rules and acceptance evidence in the plan itself.
 
+Use this completeness test:
+
+> Two competent executors given the plan and the same repository state should produce substantially the same implementation. If they can choose materially different files, interfaces, state transitions, ordering, failure behavior, or verification while still following the plan, the plan is incomplete.
+
 Inspect every path, symbol, dependency, consumer, test, and command named by the plan. Organize work in dependency order. For each meaningful task include only what helps execution:
 
 - observable outcome and reason;
@@ -140,9 +148,9 @@ Inspect every path, symbol, dependency, consumer, test, and command named by the
 - affected interfaces, schemas, invariants, and state transitions;
 - implementation detail sufficient to prevent rediscovery;
 - exact verification and expected evidence;
-- evidence or disagreement that requires stopping or replanning.
+- evidence or disagreement that requires stopping and returning to the owner.
 
-Cover migrations, compatibility, documentation, and pinning tests only when the change actually affects them. Remove placeholders and vague instructions. A plan does not authorize implementation.
+Cover migrations, compatibility, documentation, and pinning tests only when the change actually affects them. Remove placeholders and vague instructions. If repository reality contradicts the plan, the required implementation expands materially, or the planned mechanism fails, stop and present the evidence. Do not silently redesign, introduce a workaround, substitute another mechanism, or revise a settled decision. A plan does not authorize implementation.
 
 ## Use Opus as adversarial input
 
@@ -152,11 +160,11 @@ Give Opus a neutral, self-contained brief and the complete relevant authority. A
 
 Treat every Opus finding and severity as a claim. Triage every finding against primary evidence:
 
-- **fold** — supported, reachable, in scope, and proportionate; recommend the smallest correction and apply it only within existing write authorization;
+- **fold** — supported, reachable, in scope, and proportionate; recommend the smallest correction;
 - **cut** — incorrect, already handled, duplicated, out of scope, disproportionate, or dependent on an implausible theoretical condition;
 - **escalate** — exposes a genuine owner decision or changes settled meaning.
 
-Do not dump raw findings on the user. Summarize what to fold, explain what was cut, and bring forward only genuine forks with evidence, consequences, and a recommendation.
+Do not dump raw findings on the user. Present the proposed disposition of every material finding, with the verified evidence and smallest correction for folds, the concrete reason for cuts, and the consequences and recommendation for escalations. The owner decides the disposition. Do not modify the reviewed artifact or implementation from an Opus finding until the owner accepts the proposed triage, unless the owner explicitly authorized automatic folding for that review.
 
 Never use a clean review as the convergence condition. Do not repeat reviews merely because Opus can find another issue. Re-review only when folded changes materially alter the reviewed subject. Finish when accepted material findings are resolved and every remaining finding has a justified disposition.
 
@@ -172,5 +180,7 @@ Apply authority in this order:
 4. the ledger and evidence notes.
 
 When these disagree materially, reconcile the durable artifacts or stop for an owner decision. During implementation, inspect the actual diff, run focused checks and the proportionate project suite, diagnose failures from evidence, and update only artifacts that would otherwise mislead the next session.
+
+After context compaction, a session restart, or a handoff, recover authority from the repository before continuing. Re-read the governing ledger, accepted contract, plan, repository guidance, current diff and Git state, and the code relevant to the resume point. Treat a chat summary as navigation, not as the authoritative replacement for those artifacts. Continue from the current rung; do not redo completed work or reconstruct settled decisions from memory.
 
 At completion, report the result, changed files, verification evidence, artifact reconciliations, and residual risk. No final Opus pass or other ceremonial gate is mandatory.
