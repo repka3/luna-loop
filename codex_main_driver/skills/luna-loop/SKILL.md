@@ -1,11 +1,11 @@
 ---
 name: luna-loop
-description: "Run the adaptive Luna Loop for disciplined software work without mandatory phases. Use when the user invokes $luna-loop, says Luna Loop or use the loop, or otherwise explicitly asks for the Luna Loop workflow to guide architectural discussion, durable decisions, a falsifiable design contract, implementation planning, direct implementation, verification, or optional Opus challenge. Recommend the lightest adequate route and never treat loop invocation alone as authorization to implement."
+description: "Run the adaptive Luna Loop for disciplined software work without mandatory phases. Use when the user invokes $luna-loop, says Luna Loop or use the loop, or otherwise explicitly asks for the Luna Loop workflow to guide architectural discussion, durable decisions, implementation planning, direct implementation, verification, or optional Opus challenge. Recommend the lightest adequate route and never treat loop invocation alone as authorization to implement."
 ---
 
 # Luna Loop
 
-Use one adaptive workflow. Apply only the controls that address a real uncertainty or risk; never force a ledger, contract, plan, review, or implementation merely because another one occurred.
+Use one adaptive workflow. Apply only the controls that address a real uncertainty or risk; never force a ledger, plan, review, or implementation merely because another one occurred.
 
 ## Enter deliberately
 
@@ -17,7 +17,7 @@ When the user already selected a route, follow it. Otherwise:
 2. Identify any point where Opus would add meaningful independent scrutiny.
 3. Ask the user to confirm the route before creating workflow artifacts.
 
-Route confirmation authorizes the agreed in-project ledger, contract, or plan work. It does not authorize implementation. Require an explicit go-word such as `go` or `implement the settled change` after the implementation scope is settled.
+Route confirmation authorizes the agreed in-project ledger or plan work. It does not authorize implementation. Require an explicit go-word such as `go` or `implement the settled change` after the implementation scope is settled.
 
 Treat tentative language such as `I think`, `maybe`, `what if`, `probably`, and `it seems` as discussion, not a decision or authorization. Investigate, challenge, expand, and recommend; do not mutate while the user is considering an idea.
 
@@ -28,12 +28,11 @@ Treat an explicit request for the full workflow as permission to use every contr
 ## Select controls by failure mode
 
 - **Discussion and ledger** — use when intent, architecture, boundaries, or material trade-offs remain unsettled.
-- **Design contract** — use when materially different behaviors or architectures could all comply with the current authority.
 - **Implementation plan** — use when behavior is settled but repository-specific sequencing, affected-surface analysis, migration, or verification needs durable precision.
 - **Direct implementation** — use when the change is settled, localized, proportionate, and easy to verify.
 - **Opus** — propose when an independent challenge, research pass, or implementation review has enough expected value to justify its cost.
 
-Combine controls freely. Valid routes include direct implementation, plan then implementation, ledger then plan, contract then implementation, and the full ledger-contract-review-plan-review-implementation-review route.
+Combine controls freely. Valid routes include direct implementation, plan then implementation, ledger then plan, and the full ledger-review-plan-review-implementation-review route.
 
 Skip a separate artifact when its necessary content fits precisely in the next artifact. Skipping a document never permits skipping the reasoning it would have protected.
 
@@ -78,8 +77,8 @@ Do not silently turn a local request into a new subsystem, dependency, storage m
 Keep authorization non-cascading:
 
 1. A hypothesis does not settle a decision.
-2. A settled decision does not approve a contract or plan.
-3. A contract or plan does not authorize implementation.
+2. A settled decision does not approve a plan.
+3. A plan does not authorize implementation.
 4. Implementation authorization does not authorize a commit.
 5. Commit authorization does not authorize a push.
 6. A push does not authorize an image or package build, publication, release, or deployment.
@@ -106,36 +105,13 @@ Keep only useful content:
 
 Ask one genuine owner decision at a time and include a recommendation grounded in the inspected evidence. Persist a decision when it settles; do not preserve exploratory noise as authority. Before pausing or leaving discovery, reconcile the conversation with the ledger.
 
-Keep the ledger and downstream artifacts synchronized. When contract or plan work exposes a point the ledger does not settle, stop that work, inspect every discoverable fact needed for a recommendation, ask one focused owner question, record the settled answer in the ledger, and only then continue. Do not silently choose an interpretation because planning has already started. Settle pure implementation mechanics yourself only when they do not change behavior or architecture, and make the choice visible so the owner can veto it.
-
-## Write a falsifiable design contract
-
-Write `docs/contracts/YYYY-MM-DD-HHMM-<topic>.md` using local time, or update the existing governing contract. Mark it **draft**, **accepted**, or **superseded**.
-
-Use this completeness test:
-
-> If two materially different behaviors or intentionally constrained architectures can both comply with a rule, the rule is incomplete.
-
-Allow freedom only for mechanics that do not matter to the settled design. Include internal architecture when ownership, boundaries, sources of truth, transaction scope, ordering, or another structural choice must constrain downstream plans.
-
-For every material rule, define:
-
-- **Where** — the exact subsystem, boundary, entry point, state, or interface;
-- **When** — the triggering condition and relevant combinations;
-- **Which** — enumerated fields, values, actors, states, and errors;
-- **What** — the required operation, output, transition, ordering, limit, or prohibition;
-- **Failure** — the exact result when the operation cannot complete;
-- **Evidence** — an observation or test capable of falsifying the rule.
-
-Replace undefined terms such as `safe`, `sanitized`, `appropriate`, `sensitive`, `caller data`, `robust`, `properly`, and `handle correctly` with exact sets, operations, conditions, and results. Use decision tables when combinations matter.
-
-Map each material rule to acceptance evidence. Put unmeasured engineering facts under **Pending evidence** with an owner and probe. Do not accept the contract while owner decisions, placeholders, conflicting interpretations, or unverified repository claims remain.
+Keep the ledger and downstream artifacts synchronized. When plan work exposes a point the ledger does not settle, stop that work, inspect every discoverable fact needed for a recommendation, ask one focused owner question, record the settled answer in the ledger, and only then continue. Do not silently choose an interpretation because planning has already started. Settle pure implementation mechanics yourself only when they do not change behavior or architecture, and make the choice visible so the owner can veto it.
 
 ## Produce a repository-grounded plan
 
 Write `docs/plans/YYYY-MM-DD-HHMM-<topic>.md` using local time, or update the existing plan.
 
-Derive the plan from the latest user authority, accepted contract when present, settled ledger decisions, repository guidance, and verified code. Do not invent missing behavior. When no separate contract is useful, put the exact behavioral rules and acceptance evidence in the plan itself.
+Derive the plan from the latest user authority, settled ledger decisions, repository guidance, and verified code. Do not invent missing behavior. Put the exact behavioral rules and acceptance evidence in the plan itself.
 
 Use this completeness test:
 
@@ -154,7 +130,7 @@ Cover migrations, compatibility, documentation, and pinning tests only when the 
 
 ## Use Opus as adversarial input
 
-Propose `$opus` during discussion, contract work, planning, research, or implementation review when independent scrutiny is worthwhile. Because every dispatch is billable, ask before each call unless the user granted blanket Opus permission for the current loop.
+Propose `$opus` during discussion, planning, research, or implementation review when independent scrutiny is worthwhile. Because every dispatch is billable, ask before each call unless the user granted blanket Opus permission for the current loop.
 
 Treat the effort named for an Opus call as part of that call's authorization.
 Pass an explicit `high`, `xhigh`, or `max` through unchanged; when the user
@@ -175,19 +151,18 @@ Do not dump raw findings on the user. Present the proposed disposition of every 
 
 Never use a clean review as the convergence condition. Do not repeat reviews merely because Opus can find another issue. Re-review only when folded changes materially alter the reviewed subject. Finish when accepted material findings are resolved and every remaining finding has a justified disposition.
 
-Do not create a review record by default. When the triage has durable audit or resume value, write an adjacent `<timestamped-subject-basename>.review.md`; otherwise fold material authority into the ledger, contract, or plan and leave reviewer noise behind.
+Do not create a review record by default. When the triage has durable audit or resume value, write an adjacent `<timestamped-subject-basename>.review.md`; otherwise fold material authority into the ledger or plan and leave reviewer noise behind.
 
 ## Preserve authority and finish cleanly
 
 Apply authority in this order:
 
 1. the user's latest explicit correction;
-2. the accepted design contract;
-3. the implementation plan;
-4. the ledger and evidence notes.
+2. the implementation plan;
+3. the ledger and evidence notes.
 
 When these disagree materially, reconcile the durable artifacts or stop for an owner decision. During implementation, inspect the actual diff, run focused checks and the proportionate project suite, diagnose failures from evidence, and update only artifacts that would otherwise mislead the next session.
 
-After context compaction, a session restart, or a handoff, recover authority from the repository before continuing. Re-read the governing ledger, accepted contract, plan, repository guidance, current diff and Git state, and the code relevant to the resume point. Treat a chat summary as navigation, not as the authoritative replacement for those artifacts. Continue from the current rung; do not redo completed work or reconstruct settled decisions from memory.
+After context compaction, a session restart, or a handoff, recover authority from the repository before continuing. Re-read the governing ledger, plan, repository guidance, current diff and Git state, and the code relevant to the resume point. Treat a chat summary as navigation, not as the authoritative replacement for those artifacts. Continue from the current rung; do not redo completed work or reconstruct settled decisions from memory.
 
 At completion, report the result, changed files, verification evidence, artifact reconciliations, and residual risk. No final Opus pass or other ceremonial gate is mandatory.

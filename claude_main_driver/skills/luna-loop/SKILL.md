@@ -34,8 +34,8 @@ to catch what it missed.
 
 Falsifiable, or it is not a plan. The bar: two different executors, given
 this plan, produce roughly the same implementation. That means what, where,
-how, and what-not — exact files, exact interfaces, contracts verbatim,
-verify commands that would actually fail on a wrong implementation. Never
+how, and what-not — exact files, exact interfaces, verify commands
+that would actually fail on a wrong implementation. Never
 spec-generalities: "we do not log caller data" admits a hundred compliant
 implementations and forbids none of the wrong ones.
 
@@ -43,12 +43,12 @@ Shape — each task is a future cold dispatch:
 
 - **Header:** the goal in one sentence, then **Global Constraints** — every
   rule, schema, and exact string more than one task consumes. Extraction
-  contract: a dispatch promptfile is the Global Constraints verbatim plus
+  rule: a dispatch promptfile is the Global Constraints verbatim plus
   the one task, nothing else. Anything not in the promptfile or on disk
   does not exist for the executor.
 - **Per task:** Files (exact paths — Create / Modify / Test) · Interfaces
   (Consumes / Produces with exact signatures — how a task learns what its
-  neighbors expect) · Contracts copied in verbatim, not referenced · Verify
+  neighbors expect) · Verify
   (exact commands with expected outcomes) · and the STOP rule: "if this
   plan and reality disagree in a way this scope cannot absorb, stop and
   report instead of improvising."
