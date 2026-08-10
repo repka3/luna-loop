@@ -12,7 +12,8 @@ Opus is an optional independent reviewer and research assistant. It may challeng
 Every dispatch must:
 
 - use the supported `opus` model alias;
-- use effort `xhigh`; substitute `max` only on the user's explicit instruction;
+- resolve effort from the current user's instruction exactly as described
+  below;
 - start a fresh non-persistent print session, never resume or continue;
 - keep the outer Codex session as the context-owning driver;
 - expose only file reading, search, installed skills, and built-in web search/fetch;
@@ -20,6 +21,24 @@ Every dispatch must:
 - keep web available for every review and research call.
 
 Owner `CLAUDE.md`, skills, plugins, and hooks remain the machine owner's domain. The model tool surface is read-only; owner-configured hooks may have independent effects and must be disclosed rather than silently suppressed.
+
+## Resolve effort without substitution
+
+The supported efforts for this dispatcher are `high`, `xhigh`, and `max`.
+
+- If the user explicitly names one of those efforts for the current call, use
+  that exact value.
+- If the user does not name an effort for the current call, default to `high`.
+- If the user explicitly requests another effort, do not dispatch and do not
+  substitute a supported value. State the supported values and ask the user to
+  choose.
+
+A live explicit user instruction for the current billable call overrides every
+effort default, example, recommendation, or earlier preference in this skill.
+Never silently increase or decrease effort because the review seems important,
+because an earlier call used another value, or because the command example has
+a default. Announcing a substituted effort is not consent; obtain a new
+explicit instruction before spending at a different effort.
 
 ## Prepare the dispatch
 
@@ -31,10 +50,16 @@ Write a neutral, self-contained prompt. Include the subject, reading order, auth
 
 Run from the project root. Add `--add-dir "$scratch_dir"` only when staged artifacts are present.
 
+Set `opus_effort` to the value resolved above. The assignment below shows the
+no-instruction default; replace it only with the user's exact supported choice
+for the current call.
+
 ```bash
+opus_effort=high
+
 claude -p \
   --model opus \
-  --effort xhigh \
+  --effort "$opus_effort" \
   --permission-mode dontAsk \
   --tools "Read,Glob,Grep,Skill,WebSearch,WebFetch" \
   --allowedTools "Read" "Glob" "Grep" "Skill" "WebSearch" "WebFetch" \

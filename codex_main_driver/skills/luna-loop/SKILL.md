@@ -156,6 +156,13 @@ Cover migrations, compatibility, documentation, and pinning tests only when the 
 
 Propose `$opus` during discussion, contract work, planning, research, or implementation review when independent scrutiny is worthwhile. Because every dispatch is billable, ask before each call unless the user granted blanket Opus permission for the current loop.
 
+Treat the effort named for an Opus call as part of that call's authorization.
+Pass an explicit `high`, `xhigh`, or `max` through unchanged; when the user
+names no effort, let the Opus dispatcher default to `high`. Never replace the
+user's value with a skill preference or announce a different value as though
+that created consent. If the requested value is unsupported, stop and ask
+instead of dispatching.
+
 Give Opus a neutral, self-contained brief and the complete relevant authority. Ask for numbered findings classified as **blocker**, **major**, **minor**, or **nitpick**, with exact evidence, realistic reachability, concrete impact, uncertainty, and the smallest supported correction.
 
 Treat every Opus finding and severity as a claim. Triage every finding against primary evidence:

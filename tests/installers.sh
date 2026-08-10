@@ -129,10 +129,24 @@ claude_source_layout_is_exact() {
   [ "$actual" = "$(printf 'codex\nluna-loop')" ]
 }
 
+codex_opus_effort_policy_is_exact() {
+  local skill="$REPO_ROOT/codex_main_driver/skills/opus/SKILL.md"
+  grep -Fq 'The supported efforts for this dispatcher are `high`, `xhigh`, and `max`.' "$skill" &&
+    grep -Fq 'default to `high`.' "$skill" &&
+    grep -Fq 'that exact value.' "$skill" &&
+    grep -Fq 'do not dispatch and do not' "$skill" &&
+    grep -Fq 'Announcing a substituted effort is not consent' "$skill" &&
+    grep -Fq 'opus_effort=high' "$skill" &&
+    grep -Fq -- '--effort "$opus_effort"' "$skill" &&
+    ! grep -Fq -- '--effort xhigh' "$skill"
+}
+
 printf 'fixtures are retained under /tmp/luna-loop-test.* for inspection\n'
 
 assert_true "Codex source pack has exactly luna-loop and opus" codex_source_layout_is_exact
 assert_true "Claude source pack has exactly luna-loop and codex" claude_source_layout_is_exact
+assert_true "Codex Opus effort follows the current user or defaults high" \
+  codex_opus_effort_policy_is_exact
 
 # Empty roots are a determinate state.
 new_fixture
@@ -164,6 +178,9 @@ assert_status "Codex reinstall is idempotent" 0
 assert_true "Codex install is a byte copy" cmp -s \
   "$REPO_ROOT/codex_main_driver/skills/luna-loop/SKILL.md" \
   "$CASE_HOME/.agents/skills/luna-loop/SKILL.md"
+assert_true "Codex Opus install is a byte copy" cmp -s \
+  "$REPO_ROOT/codex_main_driver/skills/opus/SKILL.md" \
+  "$CASE_HOME/.agents/skills/opus/SKILL.md"
 assert_false "retired workflow names are not installed" \
   test -e "$CASE_HOME/.agents/skills/loop-ledger"
 assert_false "retired interview name is not installed" \
