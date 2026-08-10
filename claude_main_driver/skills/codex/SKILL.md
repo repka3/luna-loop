@@ -97,6 +97,11 @@ blind, narrowly scoped dispatch.
 
 ## Run handling
 
+- Announce every dispatch to the user with the FULL command verbatim —
+  every flag, the `-o` output path, and the promptfile path — before or
+  as it runs. Every dispatch type, no exceptions: review, second
+  opinion, implementation. The user must be able to audit exactly what
+  ran without asking.
 - Long dispatches run in the background — don't poll; capture the final
   message with `-o <file>`.
 - Glance at the banner (`reasoning effort:`, `sandbox:`) on expensive
